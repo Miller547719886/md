@@ -45,5 +45,12 @@
     "scss",
     "pcss",
     "postcss"
-  ]
+  ],
+  "files.associations": {
+    "*.cjson": "jsonc",
+    "*.wxss": "css",
+    "*.wxs": "javascript",
+    "*.ttml": "xml",
+    "*.ttss": "css"
+  }
 }
