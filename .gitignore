@@ -52,3 +52,4 @@ web-ext.config.ts
 
 # vite-plugin-pwa dev output
 dev-dist
+.serena

@@ -3,13 +3,13 @@ import { themeOptions } from './theme'
 
 export const fontFamilyOptions: IConfigOption[] = [
   {
-    label: `无衬线`,
-    value: `-apple-system-font,BlinkMacSystemFont, Helvetica Neue, PingFang SC, Hiragino Sans GB , Microsoft YaHei UI , Microsoft YaHei ,Arial,sans-serif`,
+    label: `衬线`,
+    value: `Optima-Regular, Optima, PingFangSC-light, PingFangTC-light, 'PingFang SC', Cambria, Cochin, Georgia, Times, 'Times New Roman', serif`,
     desc: `字体123Abc`,
   },
   {
-    label: `衬线`,
-    value: `Optima-Regular, Optima, PingFangSC-light, PingFangTC-light, 'PingFang SC', Cambria, Cochin, Georgia, Times, 'Times New Roman', serif`,
+    label: `无衬线`,
+    value: `-apple-system-font,BlinkMacSystemFont, Helvetica Neue, PingFang SC, Hiragino Sans GB , Microsoft YaHei UI , Microsoft YaHei ,Arial,sans-serif`,
     desc: `字体123Abc`,
   },
   {
@@ -49,6 +49,11 @@ export const fontSizeOptions: IConfigOption[] = [
 
 export const colorOptions: IConfigOption[] = [
   {
+    label: `活力橘`,
+    value: `#FA5151`,
+    desc: `热情活力`,
+  },
+  {
     label: `经典蓝`,
     value: `#0F4C81`,
     desc: `稳重冷静`,
@@ -57,11 +62,6 @@ export const colorOptions: IConfigOption[] = [
     label: `翡翠绿`,
     value: `#009874`,
     desc: `自然平衡`,
-  },
-  {
-    label: `活力橘`,
-    value: `#FA5151`,
-    desc: `热情活力`,
   },
   {
     label: `柠檬黄`,
@@ -239,5 +239,5 @@ export const defaultStyleConfig = {
   fontSize: fontSizeOptions[2].value,
   primaryColor: colorOptions[0].value,
   codeBlockTheme: codeBlockThemeOptions[23].value,
-  legend: legendOptions[3].value,
+  legend: legendOptions[0].value,
 }
