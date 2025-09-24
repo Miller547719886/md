@@ -1,4 +1,4 @@
-![图片alt](https://mmbiz.qpic.cn/mmbiz_jpg/57l8BC3tO049TFia60CicOyycwRagZU7fJ1ZAnKxakhZCib0TKIJxwy6309yZmrJeq9RFviaVrzX98jD2fTx3xaVcA/640?wx_fmt=jpeg '图片封面')
+![图片alt](https://wsrv.nl?url=http%3A%2F%2Fmmbiz.qpic.cn%2Fmmbiz_jpg%2F57l8BC3tO061PUx6b4B7dfYXuYz2kj7goQ0rTOyzx1bxTOyMTNiahxywyXmxGxqyKziaa3ZRcdgnBdLQM8dib0MGQ%2F0%3Ffrom%3Dappmsg '图片 title')
 
 ## 引言
 
