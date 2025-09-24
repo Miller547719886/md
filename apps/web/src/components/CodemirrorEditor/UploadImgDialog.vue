@@ -189,7 +189,7 @@ const mpSchema = computed(() =>
 const mpConfig = ref(localStorage.getItem(`mpConfig`)
   ? JSON.parse(localStorage.getItem(`mpConfig`)!)
   : {
-      proxyOrigin: `http://140.143.142.169`,
+      proxyOrigin: `https://ops.t.shijieu.cn`,
       appID: `wxfcf47c89e4d8cc14`,
       appsecret: `bf1aa66b610b6d4da1c7ebb456446c57`,
     })
