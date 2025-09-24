@@ -1,4 +1,4 @@
-# AI时代的新“人才管理工具”：工作重塑与生涯重塑
+![图片alt](https://mmbiz.qpic.cn/mmbiz_jpg/57l8BC3tO049TFia60CicOyycwRagZU7fJ1ZAnKxakhZCib0TKIJxwy6309yZmrJeq9RFviaVrzX98jD2fTx3xaVcA/640?wx_fmt=jpeg '图片封面')
 
 ## 引言
 

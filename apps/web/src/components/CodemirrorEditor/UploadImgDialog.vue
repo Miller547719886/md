@@ -189,9 +189,9 @@ const mpSchema = computed(() =>
 const mpConfig = ref(localStorage.getItem(`mpConfig`)
   ? JSON.parse(localStorage.getItem(`mpConfig`)!)
   : {
-      proxyOrigin: ``,
-      appID: ``,
-      appsecret: ``,
+      proxyOrigin: `http://140.143.142.169`,
+      appID: `wxfcf47c89e4d8cc14`,
+      appsecret: `bf1aa66b610b6d4da1c7ebb456446c57`,
     })
 
 function mpSubmit(formValues: any) {
@@ -295,6 +295,10 @@ const options = [
     label: `默认`,
   },
   {
+    value: `mp`,
+    label: `公众号图床`,
+  },
+  {
     value: `github`,
     label: `GitHub`,
   },
@@ -313,10 +317,6 @@ const options = [
   {
     value: `minio`,
     label: `MinIO`,
-  },
-  {
-    value: `mp`,
-    label: `公众号图床`,
   },
   {
     value: `r2`,
