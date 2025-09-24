@@ -90,7 +90,8 @@ function buildMpHtml(config: Config) {
     `data-verify_status="${config.verify || `0`}"`,
   ].filter(Boolean).join(` `)
 
-  return `<section class="mp_profile_iframe_wrp custom_select_card_wrp" nodeleaf="">
+  return `<p style="text-align: center; font-size: 14px; margin: 1em 0 16px 0; color: rgba(0,0,0,0.55)">点击下方卡片关注生涯重塑,了解更多生涯资讯~</p>
+<section class="mp_profile_iframe_wrp custom_select_card_wrp" nodeleaf="">
   <mp-common-profile class="mpprofile js_uneditable custom_select_card mp_profile_iframe" ${attrs}></mp-common-profile>
   <br class="ProseMirror-trailingBreak">
 </section>`
@@ -99,7 +100,7 @@ function buildMpHtml(config: Config) {
 function submit(formValues: any) {
   config.value = formValues as Config
   const html = buildMpHtml(formValues as Config)
-  toRaw(store.editor!).replaceSelection(`\n${html}\n`, `end`)
+  toRaw(store.editor!).replaceSelection(`<hr style="margin: 24px 0; border-color: rgba(0,0,0,0.1)" />\n` + `${html}\n`, `end`)
   toast.success(`公众号名片插入成功`)
   toggleShowInsertMpCardDialog(false)
 }

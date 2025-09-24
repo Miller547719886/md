@@ -48,12 +48,9 @@ function buildMpCardHtml() {
     `data-signature="${profile.desc}"`,
     `data-service_type="1"`,
     `data-verify_status="1"`,
-  ].join(` `)
+  ].filter(Boolean).join(` `)
 
-  // 生成分割线HTML，样式与 --- 一致，上下24px外边距
-  const hrHtml = `<hr style="margin: 24px 0;">`
-
-  return `${hrHtml}
+  return `<p style="text-align: center; font-size: 14px; margin: 1em 0 16px 0; color: rgba(0,0,0,0.55)">点击下方卡片关注生涯重塑,了解更多生涯资讯~</p>
 <section class="mp_profile_iframe_wrp custom_select_card_wrp" nodeleaf="">
   <mp-common-profile class="mpprofile js_uneditable custom_select_card mp_profile_iframe" ${attrs}></mp-common-profile>
   <br class="ProseMirror-trailingBreak">
@@ -83,6 +80,7 @@ async function copy() {
 
       // 自动添加生涯重塑公众号名片到文章尾部
       const mpCardHtml = buildMpCardHtml()
+      clipboardDiv.innerHTML += `<hr style="margin: 24px 0; border-color: rgba(0,0,0,0.1)" />\n`
       clipboardDiv.innerHTML += mpCardHtml
 
       clipboardDiv.focus()

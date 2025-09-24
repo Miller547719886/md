@@ -398,10 +398,10 @@ export const useStore = defineStore(`store`, () => {
     if (authorName.value || reviewerName.value) {
       appendContent += `\n\n---\n\n`
       if (authorName.value) {
-        appendContent += `<p style="font-size: 0.875em"><strong style="color: var(--md-primary-color); font-weight: bold;">作者：</strong> ${authorName.value}</p>\n\n`
+        appendContent += `<p style="font-size: 0.875em; color: rgba(0,0,0,0.55)"><strong style="color: var(--md-primary-color); font-weight: bold;">作者：</strong> ${authorName.value}</p>\n\n`
       }
       if (reviewerName.value) {
-        appendContent += `<p style="font-size: 0.875em; padding-top: 1em"><strong style="color: var(--md-primary-color); font-weight: bold;">审核：</strong> ${reviewerName.value}</p>\n\n`
+        appendContent += `<p style="font-size: 0.875em; padding-top: 1em; color: rgba(0,0,0,0.55)"><strong style="color: var(--md-primary-color); font-weight: bold;">审核：</strong> ${reviewerName.value}</p>\n\n`
       }
     }
 
@@ -411,11 +411,11 @@ export const useStore = defineStore(`store`, () => {
       if (!appendContent) {
         appendContent += `\n\n---\n\n`
       }
-      appendContent += `<p style="font-size: 0.875em; padding-top: 1em"><strong style="color: var(--md-primary-color); font-weight: bold;">参考文献：</strong>`
-      validReferences.forEach((ref, index) => {
-        appendContent += `<p style="font-size: 0.875em; padding-top: 1em;">【${index + 1}】${ref.content.trim()}</p>`
-      })
+      appendContent += `<p style="font-size: 0.875em; padding-top: 1em;"><strong style="color: var(--md-primary-color); font-weight: bold;">参考文献：</strong>`
       appendContent += `</p>`
+      validReferences.forEach((ref, index) => {
+        appendContent += `<p style="font-size: 0.875em; padding-top: 1em; color: rgba(0,0,0,0.55)">【${index + 1}】${ref.content.trim()}</p>`
+      })
     }
 
     const contentToRender = raw + appendContent
