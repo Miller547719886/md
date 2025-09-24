@@ -24,6 +24,9 @@ const form = ref<Post>({
 const allowPost = computed(() => extensionInstalled.value && form.value.accounts.some(a => a.checked))
 
 async function prePost() {
+  // 先执行格式化前置操作
+  await store.formatContent()
+
   if (extensionInstalled.value && allAccounts.value.length === 0) {
     await getAccounts()
   }

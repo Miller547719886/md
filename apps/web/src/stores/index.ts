@@ -256,11 +256,10 @@ export const useStore = defineStore(`store`, () => {
   })
 
   // 格式化文档
-  const formatContent = () => {
-    formatDoc(editor.value!.getValue()).then((doc) => {
-      posts.value[currentPostIndex.value].content = doc
-      toRaw(editor.value!).setValue(doc)
-    })
+  const formatContent = async () => {
+    const doc = await formatDoc(editor.value!.getValue())
+    posts.value[currentPostIndex.value].content = doc
+    toRaw(editor.value!).setValue(doc)
   }
 
   // 切换 highlight.js 代码主题
@@ -368,6 +367,15 @@ export const useStore = defineStore(`store`, () => {
     level: number
   }[]>([])
 
+  // 作者和审核信息
+  const authorName = ref(``)
+  const reviewerName = ref(``)
+
+  // 参考文献信息
+  const references = ref<{ id: number, content: string }[]>([
+    { id: Date.now(), content: `` },
+  ])
+
   // 更新编辑器
   const editorRefresh = () => {
     codeThemeChange()
@@ -382,7 +390,36 @@ export const useStore = defineStore(`store`, () => {
     })
 
     const raw = editor.value!.getValue()
-    const { html: baseHtml, readingTime: readingTimeResult } = renderMarkdown(raw, renderer)
+
+    // 添加作者、审核和参考文献信息到文章末尾
+    let appendContent = ``
+
+    // 添加作者和审核信息
+    if (authorName.value || reviewerName.value) {
+      appendContent += `\n\n---\n\n`
+      if (authorName.value) {
+        appendContent += `<p style="font-size: 0.875em"><strong style="color: var(--md-primary-color); font-weight: bold;">作者：</strong> ${authorName.value}</p>\n\n`
+      }
+      if (reviewerName.value) {
+        appendContent += `<p style="font-size: 0.875em; padding-top: 1em"><strong style="color: var(--md-primary-color); font-weight: bold;">审核：</strong> ${reviewerName.value}</p>\n\n`
+      }
+    }
+
+    // 添加参考文献
+    const validReferences = references.value.filter(ref => ref.content.trim() !== ``)
+    if (validReferences.length > 0) {
+      if (!appendContent) {
+        appendContent += `\n\n---\n\n`
+      }
+      appendContent += `<p style="font-size: 0.875em; padding-top: 1em"><strong style="color: var(--md-primary-color); font-weight: bold;">参考文献：</strong>`
+      validReferences.forEach((ref, index) => {
+        appendContent += `<p style="font-size: 0.875em; padding-top: 1em;">【${index + 1}】${ref.content.trim()}</p>`
+      })
+      appendContent += `</p>`
+    }
+
+    const contentToRender = raw + appendContent
+    const { html: baseHtml, readingTime: readingTimeResult } = renderMarkdown(contentToRender, renderer)
     readingTime.chars = raw.length
     readingTime.words = readingTimeResult.words
     readingTime.minutes = Math.ceil(readingTimeResult.minutes)
@@ -729,6 +766,10 @@ export const useStore = defineStore(`store`, () => {
     previewWidthChanged,
 
     editorRefresh,
+
+    authorName,
+    reviewerName,
+    references,
 
     themeChanged,
     fontChanged,

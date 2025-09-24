@@ -68,6 +68,16 @@
 | 推广专区       | 推广书籍、活动等，字体配置与正文相同，通常为图+文的组合        | 15px     | 1.75   | 1      |
 | 关注我们       | 公众号引流，使用微信公众号名片组件                             | -        | -      | -      |
 
+## 实现方案
+
+### 正文语法
+
+![format alt](./format.png 'format title')
+
+### 编辑器自动填充部分
+
+![autofill alt](./autofill.png 'autofill title')
+
 ## 参考
 
 北师婚家咨询中心：https://mp.weixin.qq.com/s/GRxJZ1Y0Bi3Yy5RE7N0iyA

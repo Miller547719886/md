@@ -153,6 +153,7 @@ export function initRenderer(opts: IOpts): RendererAPI {
   let codeIndex: number = 0
   const listOrderedStack: boolean[] = []
   const listCounters: number[] = []
+  let h2Counter: number = 0
 
   function getOpts(): IOpts {
     return opts
@@ -183,6 +184,7 @@ export function initRenderer(opts: IOpts): RendererAPI {
   function reset(newOpts: Partial<IOpts>): void {
     footnotes.length = 0
     footnoteIndex = 0
+    h2Counter = 0
     setOptions(newOpts)
   }
 
@@ -209,7 +211,8 @@ export function initRenderer(opts: IOpts): RendererAPI {
     }
     return `
       <blockquote ${styles(`blockquote`)}>
-        <p ${styles(`blockquote_p`)}>字数 ${readingTime?.words}，阅读大约需 ${Math.ceil(readingTime?.minutes)} 分钟</p>
+        <p ${styles(`blockquote_p`)}>点击<span style="color: #576B95"> 上方蓝字 </span>关注我们，了解更多生涯资讯~</p>
+        <p ${styles(`blockquote_p`)}>全文共 ${readingTime?.words} 字，约需 ${Math.ceil(readingTime?.minutes)} 分钟完成阅读。</p>
       </blockquote>
     `
   }
@@ -229,6 +232,13 @@ export function initRenderer(opts: IOpts): RendererAPI {
     heading({ tokens, depth }: Tokens.Heading) {
       const text = this.parser.parseInline(tokens)
       const tag = `h${depth}`
+
+      if (depth === 2) {
+        h2Counter++
+        const prefix = `${String(h2Counter).padStart(2, `0`)}. `
+        return styledContent(tag, prefix + text)
+      }
+
       return styledContent(tag, text)
     },
 

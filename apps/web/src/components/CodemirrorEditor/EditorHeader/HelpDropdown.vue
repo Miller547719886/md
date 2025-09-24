@@ -21,9 +21,9 @@ function openFundDialog() {
 <template>
   <!-- 作为 MenubarSub 使用 -->
   <MenubarSub v-if="asSub">
-    <MenubarSubTrigger>
+    <!-- <MenubarSubTrigger>
       帮助
-    </MenubarSubTrigger>
+    </MenubarSubTrigger> -->
     <MenubarSubContent align="start">
       <MenubarCheckboxItem @click="openAboutDialog()">
         关于
@@ -36,7 +36,7 @@ function openFundDialog() {
 
   <!-- 作为 MenubarMenu 使用（默认） -->
   <MenubarMenu v-else>
-    <MenubarTrigger>帮助</MenubarTrigger>
+    <!-- <MenubarTrigger>帮助</MenubarTrigger> -->
     <MenubarContent align="start">
       <MenubarCheckboxItem @click="openAboutDialog()">
         <span>关于</span>

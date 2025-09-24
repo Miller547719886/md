@@ -14,7 +14,7 @@ onMounted(() => {
       v-if="loading"
       class="loading"
     >
-      <strong>生涯重塑公众号专用文章编辑器</strong>
+      <strong>生涯重塑文章编辑器</strong>
     </div>
   </transition>
 </template>

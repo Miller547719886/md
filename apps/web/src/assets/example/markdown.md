@@ -1,8 +1,5 @@
 # AI时代的新“人才管理工具”：工作重塑与生涯重塑
 
-点击上方蓝色的字关注公众号
-了解更多生涯资讯
-
 ## 引言
 
 对组织而言，到底是挑选合适的人，还是培养合适的人，这两种方式哪一种更有性价比？
@@ -74,30 +71,7 @@
 第二，提升潜力人才的抗逆力或复原力，进而提升组织应对外部风险、阻碍和挑战的能力；
 
 第三，助力潜力人才与组织的相互促进以及持续发展。
+
 ## 结语
 
 2025年刚刚拉开帷幕，各行各业都在进行总结与展望，从中我们不难感知，工业时代的集中化、规模化、标准化的组织方式，正在被人工智能时代新的组织方式替代，生产无人化，管理平台化是未来的发展趋势，组织对于人才的需求更加精简化，对人才的要求则更加精英化，基于此，对于人才的管理则必须更加个性化、精细化！
-
-作者：左雯 王忠军
-
-排版：左雯
-
-图片源自网络，侵删
-
-名词解释：
-
-【1】乌卡时代：
-
-是volatile（易变）、uncertain（不确定）、complex（复杂）、ambiguous（模糊）四个英文单词的首字母缩写，由美国学者沃伦·本尼斯和伯特·纳努斯于20世纪80年代首次提出
-
-。该概念描述了我们所处的易变性、不确定性、复杂性和模糊性的世界。
-
-参考文献：
-
-【1】2008). The Dynamics of Proactivity at Work. Research in Organizational Behavior, 28, 3-34.http://dx.doi.org/10.1016/j.riob.2008.04.002
-
-【2】Lee, J.Y.; Chen, C.L.; Kolokowsky, E.; Hong, S.; Siegel, J.T.; Donaldson, S.I. Development and validation of the career crafting assessment (CCA). J. Career Assess. 2021, 29, 717–736
-
-【3】Leeuwen, E.V.; Taris, T.; Heuvel, M.; Knies, E.; Rensen, E.V.; Lammers, J. A career crafting training program: Results of an intervention study. Front. Psychol. 2021, 12, 664453.
-
-【4】刘颖，徐森，杨忠（2018）工作重塑:理论脉络、研究进展与本土化展望

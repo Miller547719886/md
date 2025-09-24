@@ -25,10 +25,12 @@ const defaultTheme: Theme = {
     h2: {
       'display': `table`,
       'padding': `0 0.2em`,
-      'margin': `4em auto 2em`,
-      'color': `#fff`,
-      'background': `var(--md-primary-color)`,
+      'margin': `2em auto 2em`,
+      'color': `var(--md-primary-color)`,
+      'border-top': `2px solid var(--md-primary-color)`,
+      'border-bottom': `2px solid var(--md-primary-color)`,
       'font-size': `1.2em`,
+      'line-height': `2`,
       'font-weight': `bold`,
       'text-align': `center`,
     },
@@ -77,7 +79,8 @@ const defaultTheme: Theme = {
     // 引用
     blockquote: {
       'font-style': `normal`,
-      'padding': `1em`,
+      'padding': `0.8em`,
+      'font-size': `0.875em`,
       'border-left': `4px solid var(--md-primary-color)`,
       'border-radius': `6px`,
       'color': `rgba(0,0,0,0.5)`,
@@ -605,6 +608,9 @@ const simpleTheme = toMerged(defaultTheme, {
   inline: {
     listitem: {
       margin: `0.5em 8px`,
+    },
+
+    strong: {
     },
   },
 })

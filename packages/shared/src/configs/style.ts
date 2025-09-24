@@ -233,7 +233,7 @@ export const defaultStyleConfig = {
   isCiteStatus: false,
   isMacCodeBlock: true,
   isShowLineNumber: false,
-  isCountStatus: false,
+  isCountStatus: true,
   theme: themeOptions[0].value,
   fontFamily: fontFamilyOptions[0].value,
   fontSize: fontSizeOptions[2].value,

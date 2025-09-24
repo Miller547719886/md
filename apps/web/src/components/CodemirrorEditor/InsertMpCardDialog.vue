@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { getDefaultMpProfile } from '@md/shared/configs'
 import { toTypedSchema } from '@vee-validate/yup'
 import { Field, Form } from 'vee-validate'
 import * as yup from 'yup'
@@ -28,13 +29,43 @@ interface Config {
 }
 
 /** 表单字段 */
+const defaultProfile = getDefaultMpProfile()
 const config = useStorage<Config>(addPrefix(`mp-profile`), {
-  id: ``,
-  name: ``,
-  logo: ``,
-  desc: ``,
+  id: defaultProfile.id,
+  name: defaultProfile.name,
+  logo: defaultProfile.logo,
+  desc: defaultProfile.desc,
   serviceType: `1`,
   verify: `0`,
+})
+
+/**
+ * @deprecated 更换为对象形式，后续版本可移除该兼容写法
+ */
+const mpId = useStorage(`mpId`, ``)
+/**
+ * @deprecated 更换为对象形式，后续版本可移除该兼容写法
+ */
+const mpName = useStorage(`mpName`, ``)
+/**
+ * @deprecated 更换为对象形式，后续版本可移除该兼容写法
+ */
+const mpLogo = useStorage(`mpLogo`, ``)
+/**
+ * @deprecated 更换为对象形式，后续版本可移除该兼容写法
+ */
+const mpDesc = useStorage(`mpDesc`, ``)
+
+onMounted(() => {
+  config.value.id = mpId.value || config.value.id
+  config.value.name = mpName.value || config.value.name
+  config.value.logo = mpLogo.value || config.value.logo
+  config.value.desc = mpDesc.value || config.value.desc
+
+  mpId.value = ``
+  mpName.value = ``
+  mpLogo.value = ``
+  mpDesc.value = ``
 })
 
 const schema = toTypedSchema(yup.object({

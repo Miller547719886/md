@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Editor } from 'codemirror'
 import type { ComponentPublicInstance } from 'vue'
+import { getDefaultMpProfile } from '@md/shared/configs'
 import imageCompression from 'browser-image-compression'
 import { fromTextArea } from 'codemirror'
 import { Eye, Pen } from 'lucide-vue-next'
@@ -22,13 +23,36 @@ import { fileUpload } from '@/utils/file'
 const store = useStore()
 const displayStore = useDisplayStore()
 
-const { isDark, output, editor } = storeToRefs(store)
+const { isDark, output, editor, authorName, reviewerName, references } = storeToRefs(store)
 const { editorRefresh } = store
 
 const { toggleShowUploadImgDialog } = displayStore
 
 const backLight = ref(false)
 const isCoping = ref(false)
+
+// 生成公众号名片预览HTML
+const mpCardPreviewHtml = computed(() => {
+  const profile = getDefaultMpProfile()
+  const attrs = [
+    `data-pluginname="mpprofile"`,
+    `data-id="${profile.id}"`,
+    `data-nickname="${profile.name}"`,
+    `data-headimg="${profile.logo}"`,
+    `data-signature="${profile.desc}"`,
+    `data-service_type="1"`,
+    `data-verify_status="1"`,
+  ].join(` `)
+
+  // 生成分割线HTML，样式与 --- 一致，上下24px外边距
+  const hrHtml = `<hr style="margin: 24px 0;">`
+
+  return `${hrHtml}
+<section class="mp_profile_iframe_wrp custom_select_card_wrp" nodeleaf="">
+  <mp-common-profile class="mpprofile js_uneditable custom_select_card mp_profile_iframe" ${attrs}></mp-common-profile>
+  <br class="ProseMirror-trailingBreak">
+</section>`
+})
 
 function startCopy() {
   backLight.value = true
@@ -49,6 +73,77 @@ const showEditor = ref(true)
 function toggleView() {
   showEditor.value = !showEditor.value
 }
+
+// 作者&审核编辑区相关状态
+const isAuthorReviewExpanded = ref(false)
+
+// 切换作者&审核面板展开状态
+function toggleAuthorReviewPanel() {
+  isAuthorReviewExpanded.value = !isAuthorReviewExpanded.value
+  nextTick(() => {
+    updateEditorSectionsHeight()
+  })
+}
+
+// 参考文献编辑区相关状态
+const isReferencesExpanded = ref(false)
+
+// 切换参考文献面板展开状态
+function toggleReferencesPanel() {
+  isReferencesExpanded.value = !isReferencesExpanded.value
+  nextTick(() => {
+    updateEditorSectionsHeight()
+  })
+}
+
+// 添加参考文献项
+function addReference() {
+  references.value.push({
+    id: Date.now(),
+    content: ``,
+  })
+}
+
+// 删除参考文献项
+function removeReference(index: number) {
+  references.value.splice(index, 1)
+}
+
+// 动态计算编辑区高度
+function updateEditorSectionsHeight() {
+  const titleHeight = 32 // 每个标题的固定高度
+  const authorReviewHeight = isAuthorReviewExpanded.value ? 120 : 0
+  const referencesHeight = isReferencesExpanded.value ? 180 : 0
+
+  // 展开内容的总高度（只有作者&审核和参考文献有可展开内容）
+  const totalContentHeight = authorReviewHeight + referencesHeight
+  // 非正文编辑区域的总高度（两个可收起编辑区的标题 + 内容）
+  const sectionsHeight = (titleHeight * 2) + totalContentHeight
+
+  // 设置CSS变量
+  const root = document.documentElement
+  root.style.setProperty(`--editor-sections-height`, `${sectionsHeight}px`)
+  root.style.setProperty(`--author-review-height`, `${authorReviewHeight}px`)
+  root.style.setProperty(`--references-height`, `${referencesHeight}px`)
+}
+
+// 监听展开状态变化
+watch([isAuthorReviewExpanded, isReferencesExpanded], () => {
+  updateEditorSectionsHeight()
+})
+
+// 组件挂载时初始化高度
+onMounted(() => {
+  updateEditorSectionsHeight()
+})
+
+// 监听作者、审核和参考文献信息变化，触发编辑器刷新
+watch([authorName, reviewerName, () => references.value.map(r => r.content)], () => {
+  // 延迟执行避免频繁更新
+  setTimeout(() => {
+    editorRefresh()
+  }, 300)
+}, { deep: true })
 
 const {
   AIPolishBtnRef,
@@ -502,6 +597,11 @@ onUnmounted(() => {
                 'border-r': store.isEditOnLeft,
               }"
             >
+              <!-- 正文编辑区标签 -->
+              <div class="editor-label border-b px-3 py-1.5 text-xs text-muted-foreground bg-muted/30">
+                正文编辑区
+              </div>
+
               <SearchTab v-if="editor" ref="searchTabRef" :editor="editor" />
               <AIFixedBtn
                 :is-mobile="store.isMobile"
@@ -516,6 +616,106 @@ onUnmounted(() => {
                   placeholder="Your markdown text here."
                 />
               </EditorContextMenu>
+
+              <!-- 作者&审核编辑区 -->
+              <div class="author-review-section border-t bg-muted/20">
+                <div
+                  class="cursor-pointer px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted/40 transition-colors flex items-center justify-between"
+                  @click="toggleAuthorReviewPanel"
+                >
+                  <span>作者&审核编辑区</span>
+                  <svg
+                    class="w-3 h-3 transition-transform duration-200"
+                    :class="{ 'rotate-180': isAuthorReviewExpanded }"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+                <div
+                  v-show="isAuthorReviewExpanded"
+                  class="author-review-content px-3 pb-3 pt-2 space-y-2"
+                >
+                  <div class="flex flex-col space-y-1">
+                    <label class="text-xs text-muted-foreground">作者</label>
+                    <input
+                      v-model="authorName"
+                      type="text"
+                      placeholder="请输入作者姓名"
+                      class="px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary/50 bg-background"
+                    >
+                  </div>
+                  <div class="flex flex-col space-y-1">
+                    <label class="text-xs text-muted-foreground">审核</label>
+                    <input
+                      v-model="reviewerName"
+                      type="text"
+                      placeholder="请输入审核人姓名"
+                      class="px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary/50 bg-background"
+                    >
+                  </div>
+                </div>
+              </div>
+
+              <!-- 参考文献编辑区 -->
+              <div class="references-section border-t bg-muted/20">
+                <div
+                  class="cursor-pointer px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted/40 transition-colors flex items-center justify-between"
+                  @click="toggleReferencesPanel"
+                >
+                  <span>参考文献编辑区</span>
+                  <svg
+                    class="w-3 h-3 transition-transform duration-200"
+                    :class="{ 'rotate-180': isReferencesExpanded }"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+                <div
+                  v-show="isReferencesExpanded"
+                  class="references-content px-3 pb-3 pt-2 space-y-2"
+                >
+                  <div
+                    v-for="(reference, index) in references"
+                    :key="reference.id"
+                    class="flex items-start space-x-1"
+                  >
+                    <div class="flex-1">
+                      <label class="text-xs text-muted-foreground">参考文献 [{{ index + 1 }}]</label>
+                      <textarea
+                        v-model="reference.content"
+                        placeholder="请输入参考文献内容"
+                        class="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary/50 bg-background resize-none"
+                        rows="2"
+                      />
+                    </div>
+                    <button
+                      v-if="references.length > 1"
+                      class="mt-4 p-0.5 text-red-500 hover:bg-red-50 rounded transition-colors"
+                      title="删除此项"
+                      @click="removeReference(index)"
+                    >
+                      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  <button
+                    class="flex items-center space-x-1 px-2 py-1 text-xs text-primary border border-primary/30 rounded hover:bg-primary/10 transition-colors"
+                    @click="addReference"
+                  >
+                    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    <span>添加参考文献</span>
+                  </button>
+                </div>
+              </div>
             </div>
             <div
               v-show="!store.isMobile || (store.isMobile && !showEditor)"
@@ -537,6 +737,11 @@ onUnmounted(() => {
                     :class="[store.isMobile ? 'w-[100%]' : store.previewWidth]"
                   >
                     <section id="output" class="w-full" v-html="output" />
+                    <!-- 公众号名片预览 -->
+                    <section
+                      class="mp-profile-preview w-full"
+                      v-html="mpCardPreviewHtml"
+                    />
                     <div v-if="isCoping" class="loading-mask">
                       <div class="loading-mask-box">
                         <div class="loading__img" />
@@ -625,13 +830,17 @@ onUnmounted(() => {
 
 <style lang="less" scoped>
 .container {
-  height: 100vh;
+  height: 100dvh;
   min-width: 100%;
   padding: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .container-main {
   overflow: hidden;
+  flex: 1;
+  min-height: 0;
 }
 
 #output-wrapper {
@@ -672,10 +881,73 @@ onUnmounted(() => {
 .codeMirror-wrapper,
 .preview-wrapper {
   height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .codeMirror-wrapper {
-  overflow-x: auto;
+  overflow: hidden;
+}
+
+/* 编辑区标题统一高度 */
+.editor-label,
+.author-review-section > div:first-child,
+.references-section > div:first-child {
+  height: 32px;
+  min-height: 32px;
+  display: flex;
+  flex-shrink: 0;
+}
+
+/* 作者&审核编辑区 */
+.author-review-section {
+  flex-shrink: 0;
+}
+
+.author-review-content {
+  height: var(--author-review-height);
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.author-review-content::-webkit-scrollbar {
+  display: none;
+}
+
+/* 参考文献编辑区 */
+.references-section {
+  flex-shrink: 0;
+}
+
+.references-content {
+  height: var(--references-height);
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.references-content::-webkit-scrollbar {
+  display: none;
+}
+
+/* CodeMirror 编辑器占用剩余空间 */
+:deep(.CodeMirror) {
   height: 100%;
+  flex: 1;
+  min-height: 0;
+}
+
+/* 确保 EditorContextMenu 容器正确处理高度 */
+.codeMirror-wrapper > * {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 确保内容区域在收起时不显示 */
+.author-review-content,
+.references-content {
+  transition: height 0.2s ease;
 }
 </style>

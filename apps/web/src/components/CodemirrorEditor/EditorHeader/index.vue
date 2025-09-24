@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { getDefaultMpProfile } from '@md/shared/configs'
 import { ChevronDownIcon, Menu, Settings } from 'lucide-vue-next'
 import { useStore } from '@/stores'
 import { addPrefix, processClipboardContent } from '@/utils'
@@ -36,8 +37,34 @@ const { copy: copyContent } = useClipboard({
   legacy: true,
 })
 
+// 生成公众号名片HTML
+function buildMpCardHtml() {
+  const profile = getDefaultMpProfile()
+  const attrs = [
+    `data-pluginname="mpprofile"`,
+    `data-id="${profile.id}"`,
+    `data-nickname="${profile.name}"`,
+    `data-headimg="${profile.logo}"`,
+    `data-signature="${profile.desc}"`,
+    `data-service_type="1"`,
+    `data-verify_status="1"`,
+  ].join(` `)
+
+  // 生成分割线HTML，样式与 --- 一致，上下24px外边距
+  const hrHtml = `<hr style="margin: 24px 0;">`
+
+  return `${hrHtml}
+<section class="mp_profile_iframe_wrp custom_select_card_wrp" nodeleaf="">
+  <mp-common-profile class="mpprofile js_uneditable custom_select_card mp_profile_iframe" ${attrs}></mp-common-profile>
+  <br class="ProseMirror-trailingBreak">
+</section>`
+}
+
 // 复制到微信公众号
 async function copy() {
+  // 先执行格式化前置操作
+  await store.formatContent()
+
   // 如果是 Markdown 源码，直接复制并返回
   if (copyMode.value === `md`) {
     const mdContent = editor.value?.getValue() || ``
@@ -53,6 +80,11 @@ async function copy() {
     nextTick(async () => {
       await processClipboardContent(primaryColor.value)
       const clipboardDiv = document.getElementById(`output`)!
+
+      // 自动添加生涯重塑公众号名片到文章尾部
+      const mpCardHtml = buildMpCardHtml()
+      clipboardDiv.innerHTML += mpCardHtml
+
       clipboardDiv.focus()
       window.getSelection()!.removeAllRanges()
 
@@ -91,8 +123,8 @@ async function copy() {
       // 输出提示
       toast.success(
         copyMode.value === `html`
-          ? `已复制 HTML 源码，请进行下一步操作。`
-          : `已复制渲染后的内容到剪贴板，可直接到公众号后台粘贴。`,
+          ? `已格式化并复制 HTML 源码，请进行下一步操作。`
+          : `已格式化并复制渲染后的内容到剪贴板，可直接到公众号后台粘贴。`,
       )
       window.dispatchEvent(
         new CustomEvent(`copyToMp`, {
