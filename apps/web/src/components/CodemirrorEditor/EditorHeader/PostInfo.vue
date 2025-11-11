@@ -1,16 +1,13 @@
 <script setup lang="ts">
-import type { Post, PostAccount } from '@md/shared/types'
-import { Check, Info } from 'lucide-vue-next'
-import { CheckboxIndicator, CheckboxRoot, Primitive } from 'radix-vue'
+import type { Post } from '@md/shared/types'
+import { publishCurrentDraft } from '@/services/publish'
 import { useStore } from '@/stores'
+import { toast } from '@/utils/toast'
 
 const store = useStore()
 const { output, editor } = storeToRefs(store)
 
 const dialogVisible = ref(false)
-const extensionInstalled = ref(false)
-const allAccounts = ref<PostAccount[]>([])
-const postTaskDialogVisible = ref(false)
 
 const form = ref<Post>({
   title: ``,
@@ -18,18 +15,16 @@ const form = ref<Post>({
   thumb: ``,
   content: ``,
   markdown: ``,
-  accounts: [] as PostAccount[],
+  accounts: [],
 })
 
-const allowPost = computed(() => extensionInstalled.value && form.value.accounts.some(a => a.checked))
+const allowPost = computed(() => true)
 
 async function prePost() {
   // 先执行格式化前置操作
   await store.formatContent()
 
-  if (extensionInstalled.value && allAccounts.value.length === 0) {
-    await getAccounts()
-  }
+  // 已移除插件依赖，无需加载账号
 
   let auto: Post = {
     thumb: ``,
@@ -63,26 +58,22 @@ async function prePost() {
   }
 }
 
-declare global {
-  interface Window {
-    syncPost: (data: { thumb: string, title: string, desc: string, content: string }) => void
-    $syncer: any
+// 已移除 window.$syncer 相关声明
+
+// 移除第三方账号获取逻辑
+
+async function post() {
+  try {
+    await publishCurrentDraft()
+    toast.success(`已提交发布任务`)
   }
-}
-
-async function getAccounts(): Promise<void> {
-  return new Promise((resolve) => {
-    window.$syncer?.getAccounts((resp: PostAccount[]) => {
-      allAccounts.value = resp.map(a => ({ ...a, checked: true }))
-      resolve()
-    })
-  })
-}
-
-function post() {
-  form.value.accounts = form.value.accounts.filter(a => a.checked)
-  postTaskDialogVisible.value = true
-  dialogVisible.value = false
+  catch (e: any) {
+    console.error(`发布失败:`, e)
+    toast.error(`发布失败: ${e?.message || e}`)
+  }
+  finally {
+    dialogVisible.value = false
+  }
 }
 
 function onUpdate(val: boolean) {
@@ -91,32 +82,7 @@ function onUpdate(val: boolean) {
   }
 }
 
-function checkExtension() {
-  if (window.$syncer !== undefined) {
-    extensionInstalled.value = true
-    return
-  }
-
-  // 如果插件还没加载，5秒内每 500ms 检查一次
-  let count = 0
-  const timer = setInterval(async () => {
-    if (window.$syncer !== undefined) {
-      extensionInstalled.value = true
-      await getAccounts()
-      clearInterval(timer)
-      return
-    }
-
-    count++
-    if (count > 10) { // 5秒后还是没有检测到，就停止检查
-      clearInterval(timer)
-    }
-  }, 500)
-}
-
-onBeforeMount(() => {
-  checkExtension()
-})
+// 已移除插件检测逻辑
 </script>
 
 <template>
@@ -130,28 +96,6 @@ onBeforeMount(() => {
       <DialogHeader>
         <DialogTitle>发布</DialogTitle>
       </DialogHeader>
-      <Alert>
-        <Info class="h-4 w-4" />
-        <AlertTitle>提示</AlertTitle>
-        <AlertDescription>
-          此功能由第三方浏览器插件支持，本平台不保证安全性及同步准确度。
-        </AlertDescription>
-      </Alert>
-
-      <Alert v-if="!extensionInstalled">
-        <Info class="h-4 w-4" />
-        <AlertTitle>未检测到插件</AlertTitle>
-        <AlertDescription>
-          请安装
-          <Primitive
-            as="a" class="text-blue-500" href="https://www.wechatsync.com/?utm_source=syncicon#install"
-            target="_blank"
-          >
-            文章同步助手
-          </Primitive>
-          插件
-        </AlertDescription>
-      </Alert>
 
       <div class="w-full flex items-center gap-4">
         <Label for="thumb" class="w-10 text-end">
@@ -172,33 +116,7 @@ onBeforeMount(() => {
         <Textarea id="desc" v-model="form.desc" placeholder="自动提取第一个段落" />
       </div>
 
-      <div class="w-full flex items-start gap-4">
-        <Label class="w-10 text-end">
-          账号
-        </Label>
-        <div class="flex flex-1 flex-col gap-2">
-          <div v-for="account in form.accounts" :key="account.uid + account.displayName" class="flex items-center gap-2">
-            <label class="flex flex-row items-center gap-4">
-              <CheckboxRoot
-                v-model:checked="account.checked"
-                class="bg-background hover:bg-muted h-[25px] w-[25px] flex appearance-none items-center justify-center border border-gray-200 rounded-[4px] outline-hidden"
-              >
-                <CheckboxIndicator>
-                  <Check v-if="account.checked" class="h-4 w-4" />
-                </CheckboxIndicator>
-              </CheckboxRoot>
-              <span class="flex items-center gap-2 text-sm">
-                <img
-                  :src="account.icon"
-                  alt=""
-                  class="inline-block h-[20px] w-[20px]"
-                >
-                {{ account.title }} - {{ account.displayName ?? account.home }}
-              </span>
-            </label>
-          </div>
-        </div>
-      </div>
+      <!-- 已移除账号（第三方插件）相关 UI -->
 
       <DialogFooter>
         <Button variant="outline" @click="dialogVisible = false">
@@ -211,5 +129,5 @@ onBeforeMount(() => {
     </DialogContent>
   </Dialog>
 
-  <PostTaskDialog v-model:open="postTaskDialogVisible" :post="form" />
+  <!-- 已移除第三方插件的发布任务面板 -->
 </template>

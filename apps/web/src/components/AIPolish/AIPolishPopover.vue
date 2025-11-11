@@ -30,7 +30,7 @@ const customPrompts = ref<string[]>([])
 const hasResult = ref(false)
 const selectedAction = ref<
   `optimize` | `summarize` | `spellcheck` | `translate-zh` | `translate-en` | `custom`
->(`optimize`)
+>(`custom`)
 const currentText = ref(``)
 const error = ref(``)
 
@@ -263,7 +263,7 @@ function show() {
 function close() {
   visible.value = false
   customPrompts.value = []
-  selectedAction.value = `optimize`
+  selectedAction.value = `custom`
   resetState()
 }
 

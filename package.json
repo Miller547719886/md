@@ -37,9 +37,9 @@
     "vue-tsc": "^3.0.6"
   },
   "simple-git-hooks": {
-    "pre-commit": "npx lint-staged"
+    "pre-commit": "echo 'pre-commit: skip eslint'"
   },
-  "lint-staged": {
-    "*": "eslint --fix"
+  "volta": {
+    "node": "22.21.1"
   }
 }

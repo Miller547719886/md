@@ -8,6 +8,7 @@ import CodeMirror from 'codemirror'
 import { toPng } from 'html-to-image'
 import { v4 as uuid } from 'uuid'
 import DEFAULT_CONTENT from '@/assets/example/markdown.md?raw'
+import MINIMAL_CONTENT from '@/assets/example/minimal.md?raw'
 
 import DEFAULT_CSS_CONTENT from '@/assets/example/theme-css.txt?raw'
 import { altKey, shiftKey } from '@/configs/shortcut-key'
@@ -187,9 +188,10 @@ export const useStore = defineStore(`store`, () => {
     const newPost: Post = {
       id: uuid(),
       title,
-      content: `# ${title}`,
+      // 新建草稿使用最小模板，避免噪声但保留结构
+      content: MINIMAL_CONTENT,
       history: [
-        { datetime: new Date().toLocaleString(`zh-cn`), content: `# ${title}` },
+        { datetime: new Date().toLocaleString(`zh-cn`), content: MINIMAL_CONTENT },
       ],
       createDatetime: new Date(),
       updateDatetime: new Date(),
@@ -446,7 +448,9 @@ export const useStore = defineStore(`store`, () => {
 
   // 更新 CSS
   const updateCss = () => {
-    const json = css2json(cssEditor.value!.getValue())
+    if (!cssEditor.value)
+      return
+    const json = css2json(cssEditor.value.getValue())
     const newTheme = customCssWithTemplate(
       json,
       primaryColor.value,
@@ -463,9 +467,11 @@ export const useStore = defineStore(`store`, () => {
   }
   // 初始化 CSS 编辑器
   onMounted(() => {
-    const cssEditorDom = document.querySelector<HTMLTextAreaElement>(
-      `#cssEditor`,
-    )!
+    const cssEditorDom = document.querySelector<HTMLTextAreaElement>(`#cssEditor`)
+    if (!cssEditorDom) {
+      // 当前路由不是编辑器页，无需初始化 CSS 编辑器
+      return
+    }
     cssEditorDom.value = getCurrentTab().content
     const theme = isDark.value ? `darcula` : `xq-light`
     cssEditor.value = markRaw(

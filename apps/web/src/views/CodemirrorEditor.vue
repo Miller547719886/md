@@ -611,14 +611,17 @@ onUnmounted(() => {
                 :show-editor="showEditor"
               />
 
-              <EditorContextMenu>
-                <textarea
-                  id="editor"
-                  ref="editorRef"
-                  type="textarea"
-                  placeholder="Your markdown text here."
-                />
-              </EditorContextMenu>
+              <!-- 编辑器容器：占据除其他区块外的剩余高度 -->
+              <div class="editor-area">
+                <EditorContextMenu>
+                  <textarea
+                    id="editor"
+                    ref="editorRef"
+                    type="textarea"
+                    placeholder="Your markdown text here."
+                  />
+                </EditorContextMenu>
+              </div>
 
               <!-- 作者&审核编辑区 -->
               <div class="author-review-section border-t bg-muted/20">
@@ -937,6 +940,28 @@ onUnmounted(() => {
 /* CodeMirror 编辑器占用剩余空间 */
 :deep(.CodeMirror) {
   height: 100%;
+  flex: 1;
+  min-height: 0;
+}
+
+/* 编辑器外层容器占满除标签/作者/参考之外的高度 */
+.editor-area {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 让 EditorContextMenu 的触发器（span 包裹）也参与弹性伸展 */
+.editor-area > * {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 保险：当 CodeMirror 尚未初始化时，textarea 也能占满可用高度 */
+.editor-area textarea#editor {
   flex: 1;
   min-height: 0;
 }
