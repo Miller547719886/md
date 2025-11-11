@@ -21,6 +21,17 @@ export default defineConfig(({ mode }) => {
     base,
     define: { process },
     envPrefix: [`VITE_`, `CF_`],
+    server: {
+      proxy: {
+        // 将前端对 /wx 的请求代理到微信开放平台，解决 CORS
+        '/wx': {
+          target: `https://api.weixin.qq.com`,
+          changeOrigin: true,
+          rewrite: p => p.replace(/^\/wx/, ``),
+          secure: true,
+        },
+      },
+    },
     plugins: [
       vue(),
       tailwindcss(),

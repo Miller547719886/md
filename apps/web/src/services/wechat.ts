@@ -6,7 +6,12 @@
 import fetch from '@md/shared/utils/fetch'
 import { clearAccessToken, getAccessToken } from './auth'
 
-const BASE = import.meta.env.VITE_WECHAT_PROXY_ORIGIN || `https://api.weixin.qq.com`
+// 在开发模式下，使用 Vite 代理前缀 `/wx` 以规避 CORS；
+// 生产环境或未开启代理时，仍可通过 VITE_WECHAT_PROXY_ORIGIN 配置代理服务端地址；
+// 否则回退到官方域名（将受 CORS 限制）。
+const BASE = import.meta.env.DEV
+  ? `/wx`
+  : (import.meta.env.VITE_WECHAT_PROXY_ORIGIN || `https://api.weixin.qq.com`)
 const APP_ID = import.meta.env.VITE_WECHAT_APP_ID
 const APP_SECRET = import.meta.env.VITE_WECHAT_APP_SECRET
 
