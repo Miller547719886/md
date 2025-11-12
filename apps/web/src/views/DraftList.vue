@@ -67,13 +67,8 @@ function createNew() {
 }
 
 function open(card: Card) {
-  // 对远端草稿，打开编辑页暂不拉取远端内容（需求以当前编辑器为准）；可后续增强
-  if ((card as any).source === `local`) {
-    router.push({ name: `draftEdit`, params: { id: (card as any).id } })
-  }
-  else {
-    router.push({ name: `drafts` }) // 远端草稿可先复制为本地草稿再编辑（后续可实现）
-  }
+  // 统一跳转到编辑页，由编辑页逻辑决定如何处理远端/本地草稿
+  router.push({ name: `draftEdit`, params: { id: (card as any).id } })
 }
 
 onMounted(refresh)
@@ -94,8 +89,8 @@ onMounted(refresh)
         <div v-if="!loading && error" class="card error">
           {{ error }}
         </div>
-        <div v-for="d in drafts" :key="d.id" class="card">
-          <div class="title" @click="open(d)">
+        <div v-for="d in drafts" :key="d.id" class="card" @click="open(d)">
+          <div class="title">
             {{ d.title }}
           </div>
           <div class="meta">
