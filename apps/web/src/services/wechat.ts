@@ -85,6 +85,40 @@ export async function uploadContentImage(file: File) {
   return requestWithRetry<{ url: string }>(`/cgi-bin/media/uploadimg`, { method: `POST`, data: { media: file, upload: true } })
 }
 
+// 素材管理（永久素材）
+export async function materialBatchGet(params: { type: 'image' | 'video' | 'voice' | 'news', offset: number, count: number }) {
+  return requestWithRetry(`/cgi-bin/material/batchget_material`, { method: `POST`, data: params })
+}
+export async function materialDelete(media_id: string) {
+  return requestWithRetry(`/cgi-bin/material/del_material`, { method: `POST`, data: { media_id } })
+}
+export async function materialGet(media_id: string) {
+  return requestWithRetry(`/cgi-bin/material/get_material`, { method: `POST`, data: { media_id } })
+}
+export async function materialGetCount() {
+  return requestWithRetry(`/cgi-bin/material/get_materialcount`, { method: `GET` })
+}
+export async function materialAdd({ type, file }: { type: 'image' | 'voice' | 'video' | 'thumb', file: File }) {
+  return requestWithRetry(`/cgi-bin/material/add_material?type=${type}`, { method: `POST`, data: { media: file, upload: true } })
+}
+
+// 基础接口补充
+// 网络通信检测
+export async function callbackCheck(data: { action: 'all' | 'dns' | 'ping' | 'shortconnect', check_operator?: 'DEFAULT' | 'UNICOM' | 'CT' | 'CMCC' }) {
+  return requestWithRetry(`/cgi-bin/callback/check`, { method: `POST`, data })
+}
+// 查询 rid 信息
+export async function getRidInfo(rid: string) {
+  return requestWithRetry(`/cgi-bin/openapi/rid/get`, { method: `POST`, data: { rid } })
+}
+// 使用 AppSecret 重置 API 调用次数
+export async function clearQuotaByAppSecret(appid?: string, secret?: string) {
+  const a = appid ?? APP_ID
+  const s = secret ?? APP_SECRET
+  const url = `${BASE}/cgi-bin/clear_quota/v2?appid=${encodeURIComponent(a as string)}&appsecret=${encodeURIComponent(s as string)}`
+  return fetch(url, { method: `GET` })
+}
+
 // 环境变量约定（Vite）：
 // - VITE_WECHAT_APP_ID
 // - VITE_WECHAT_APP_SECRET

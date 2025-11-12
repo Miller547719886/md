@@ -3,6 +3,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 
 const routes: RouteRecordRaw[] = [
   { path: `/`, name: `home`, component: () => import(`../views/HomeWelcome.vue`) },
+  { path: `/assets`, name: `assets`, component: () => import(`../views/AssetList.vue`) },
   { path: `/drafts`, name: `drafts`, component: () => import(`../views/DraftList.vue`) },
   // 编辑页必须带 id，避免与列表页冲突
   { path: `/drafts/:id`, name: `draftEdit`, component: () => import(`../views/DraftEdit.vue`), props: true },

@@ -4,6 +4,7 @@ import { RouterLink, useRoute } from 'vue-router'
 const route = useRoute()
 const links = [
   { to: `/`, label: `首页` },
+  { to: `/assets`, label: `素材库` },
   { to: `/drafts`, label: `草稿箱` },
   { to: `/publishes`, label: `发表记录` },
 ]

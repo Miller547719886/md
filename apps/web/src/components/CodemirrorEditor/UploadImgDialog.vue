@@ -190,8 +190,8 @@ const mpConfig = ref(localStorage.getItem(`mpConfig`)
   ? JSON.parse(localStorage.getItem(`mpConfig`)!)
   : {
       proxyOrigin: `https://ops.t.shijieu.cn`,
-      appID: `wxfcf47c89e4d8cc14`,
-      appsecret: `bf1aa66b610b6d4da1c7ebb456446c57`,
+      appID: `wxd7ab5c47c6af8afc`,
+      appsecret: `0b13d51ce03d8e53011bb078a6c2b640`,
     })
 
 function mpSubmit(formValues: any) {
@@ -338,13 +338,16 @@ const options = [
   },
 ]
 
-const imgHost = ref(`default`)
+// 仅开放公众号图床，其它图床禁用
+const imgHost = ref(`mp`)
 const useCompression = ref(false)
 const activeName = ref(`upload`)
 
 onBeforeMount(() => {
   if (localStorage.getItem(`imgHost`)) {
-    imgHost.value = localStorage.getItem(`imgHost`)!
+    // 强制收敛为 mp
+    imgHost.value = `mp`
+    localStorage.setItem(`imgHost`, `mp`)
   }
   const storedCompression = localStorage.getItem(`useCompression`)
   if (storedCompression !== null) {
@@ -353,7 +356,9 @@ onBeforeMount(() => {
 })
 
 function changeImgHost() {
-  localStorage.setItem(`imgHost`, imgHost.value)
+  // 仅允许 mp
+  imgHost.value = `mp`
+  localStorage.setItem(`imgHost`, `mp`)
   toast.success(`图床已切换`)
 }
 function changeCompression() {
@@ -367,9 +372,8 @@ function beforeImageUpload(file: File) {
     return false
   }
   // check image host
-  let imgHost = localStorage.getItem(`imgHost`)
-  imgHost = imgHost || `default`
-  localStorage.setItem(`imgHost`, imgHost)
+  let imgHost = `mp`
+  localStorage.setItem(`imgHost`, `mp`)
 
   const config = localStorage.getItem(`${imgHost}Config`)
   const isValidHost = imgHost === `default` || config
@@ -451,6 +455,8 @@ function emitUploads(file: File) {
             :key="item.value"
             :value="item.value"
             class="text-xs md:text-sm whitespace-nowrap"
+            :disabled="item.value !== 'mp'"
+            :title="item.value !== 'mp' ? '暂时不可用' : ''"
           >
             {{ item.label }}
           </TabsTrigger>
@@ -467,12 +473,13 @@ function emitUploads(file: File) {
               </SelectTrigger>
               <SelectContent class="max-h-64 md:max-h-96">
                 <SelectItem
-                  v-for="item in options"
+                  v-for="item in options.filter(o => ['mp', 'default'].includes(o.value))"
                   :key="item.value"
                   :label="item.label"
                   :value="item.value"
                 >
                   {{ item.label }}
+                  <span v-if="item.value !== 'mp'" style="color:#aaa;">（暂时不可用）</span>
                 </SelectItem>
               </SelectContent>
             </Select>

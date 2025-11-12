@@ -47,6 +47,8 @@ interface Post {
   parentId?: string | null
   // 展开状态
   collapsed?: boolean
+  // 微信草稿 media_id（用于区分新增/编辑草稿）
+  wxMediaId?: string
 }
 
 export const useStore = defineStore(`store`, () => {

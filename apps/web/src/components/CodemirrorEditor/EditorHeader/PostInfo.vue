@@ -1,133 +1,95 @@
 <script setup lang="ts">
-import type { Post } from '@md/shared/types'
-import { publishCurrentDraft } from '@/services/publish'
+import { draftAdd, draftUpdate, uploadContentImage } from '@/services/wechat'
 import { useStore } from '@/stores'
 import { toast } from '@/utils/toast'
 
 const store = useStore()
-const { output, editor } = storeToRefs(store)
+const saving = ref(false)
 
-const dialogVisible = ref(false)
-
-const form = ref<Post>({
-  title: ``,
-  desc: ``,
-  thumb: ``,
-  content: ``,
-  markdown: ``,
-  accounts: [],
-})
-
-const allowPost = computed(() => true)
-
-async function prePost() {
-  // 先执行格式化前置操作
-  await store.formatContent()
-
-  // 已移除插件依赖，无需加载账号
-
-  let auto: Post = {
-    thumb: ``,
-    title: ``,
-    desc: ``,
-    content: ``,
-    markdown: ``,
-    accounts: [],
-  }
-  const accounts = allAccounts.value.filter(a => ![`ipfs`].includes(a.type))
-  try {
-    auto = {
-      thumb: document.querySelector<HTMLImageElement>(`#output img`)?.src ?? ``,
-      title: [1, 2, 3, 4, 5, 6]
-        .map(h => document.querySelector(`#output h${h}`)!)
-        .find(h => h)
-        ?.textContent ?? ``,
-      desc: document.querySelector(`#output p`)?.textContent?.trim() ?? ``,
-      content: output.value,
-      markdown: editor.value?.getValue() ?? ``,
-      accounts,
-    }
-  }
-  catch (error) {
-    console.log(`error`, error)
-  }
-  finally {
-    form.value = {
-      ...auto,
-    }
+function extractTitleAndDigest(html: string) {
+  const div = document.createElement(`div`)
+  div.innerHTML = html
+  const heading = div.querySelector(`h1, h2, h3, h4, h5, h6`)
+  const para = div.querySelector(`p`)
+  return {
+    title: heading?.textContent?.trim() || `未命名标题`,
+    digest: para?.textContent?.trim() || ``,
   }
 }
 
-// 已移除 window.$syncer 相关声明
+async function replaceImagesWithWeChatUrls(html: string) {
+  const div = document.createElement(`div`)
+  div.innerHTML = html
+  const imgs = Array.from(div.querySelectorAll(`img`))
+  for (const img of imgs) {
+    const src = img.getAttribute(`src`) || ``
+    if (!src || /mmbiz\.qpic\.cn|mmbiz\.qlogo\.cn/.test(src))
+      continue
+    try {
+      const resp = await fetch(src)
+      const blob = await resp.blob()
+      const file = new File([blob], `image.jpg`, { type: blob.type || `image/jpeg` })
+      const { url } = await uploadContentImage(file) as any
+      if (url)
+        img.setAttribute(`src`, url)
+    }
+    catch (e) {
+      console.warn(`上传内容图片失败`, e)
+    }
+  }
+  return div.innerHTML
+}
 
-// 移除第三方账号获取逻辑
-
-async function post() {
+async function saveDraft() {
   try {
-    await publishCurrentDraft()
-    toast.success(`已提交发布任务`)
+    saving.value = true
+    await store.formatContent()
+    store.editorRefresh()
+    let html = store.output
+    html = await replaceImagesWithWeChatUrls(html)
+    const { title, digest } = extractTitleAndDigest(html)
+    const article = { title, author: ``, digest, content: html }
+    const current = store.getPostById(store.currentPostId)
+    if (current?.wxMediaId) {
+      await draftUpdate({ media_id: current.wxMediaId, index: 0, articles: article })
+      toast.success(`草稿已更新`)
+    }
+    else {
+      const resp: any = await draftAdd({ articles: [article] })
+      const mediaId = resp?.media_id
+      if (mediaId && current)
+        current.wxMediaId = mediaId
+      toast.success(`草稿已保存`)
+    }
   }
   catch (e: any) {
-    console.error(`发布失败:`, e)
-    toast.error(`发布失败: ${e?.message || e}`)
+    toast.error(`保存失败：${e?.message || e}`)
   }
   finally {
-    dialogVisible.value = false
+    saving.value = false
   }
 }
-
-function onUpdate(val: boolean) {
-  if (!val) {
-    dialogVisible.value = false
-  }
-}
-
-// 已移除插件检测逻辑
 </script>
 
 <template>
-  <Dialog v-model:open="dialogVisible" @update:open="onUpdate">
-    <DialogTrigger>
-      <Button v-if="!store.isMobile" variant="outline" @click="prePost">
-        发布
-      </Button>
-    </DialogTrigger>
-    <DialogContent>
-      <DialogHeader>
-        <DialogTitle>发布</DialogTitle>
-      </DialogHeader>
+  <div class="flex items-center gap-2">
+    <Button :disabled="saving" variant="outline" @click="saveDraft">保存草稿</Button>
+    <TooltipProvider :delay-duration="200">
+      <Tooltip>
+        <TooltipTrigger as-child>
+          <span>
+            <Button v-if="!store.isMobile" variant="outline" disabled>
+              发布
+            </Button>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>
+          受微信官方规则限制，个人认证的公众号无法通过 api 进行发布，请到官方平台发布草稿。地址：
+          <a href="https://mp.weixin.qq.com/cgi-bin/appmsg" target="_blank" style="text-decoration: underline;">https://mp.weixin.qq.com/cgi-bin/appmsg</a>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  </div>
 
-      <div class="w-full flex items-center gap-4">
-        <Label for="thumb" class="w-10 text-end">
-          封面
-        </Label>
-        <Input id="thumb" v-model="form.thumb" placeholder="自动提取第一张图" />
-      </div>
-      <div class="w-full flex items-center gap-4">
-        <Label for="title" class="w-10 text-end">
-          标题
-        </Label>
-        <Input id="title" v-model="form.title" placeholder="自动提取第一个标题" />
-      </div>
-      <div class="w-full flex items-start gap-4">
-        <Label for="desc" class="w-10 text-end">
-          描述
-        </Label>
-        <Textarea id="desc" v-model="form.desc" placeholder="自动提取第一个段落" />
-      </div>
-
-      <!-- 已移除账号（第三方插件）相关 UI -->
-
-      <DialogFooter>
-        <Button variant="outline" @click="dialogVisible = false">
-          取 消
-        </Button>
-        <Button :disabled="!allowPost" @click="post">
-          确 定
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
-
-  <!-- 已移除第三方插件的发布任务面板 -->
+  <!-- 发布功能已禁用：无弹窗、无触发，仅展示 Tooltip 提示 -->
 </template>
