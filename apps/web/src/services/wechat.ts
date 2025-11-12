@@ -38,15 +38,20 @@ async function withToken(path: string) {
 
 async function requestWithRetry<T = any>(path: string, opts: any, retry = true): Promise<T> {
   const url = await withToken(path)
-  const res: any = await fetch(url, opts)
-  // 令牌相关错误：40001(不合法的access_token)、40014(不合法的access_token)、42001(超时)
-  if (res && typeof res === `object` && res.errcode && [40001, 40014, 42001].includes(res.errcode)) {
-    if (retry) {
+  try {
+    const res: any = await fetch(url, opts)
+    // 正常 data 已在拦截器处理 errcode==0 情况，这里直接返回
+    return res as T
+  }
+  catch (e: any) {
+    // 针对 access_token 相关错误，清理并重试一次
+    const errcode = e?.data?.errcode
+    if (retry && [40001, 40014, 42001].includes(errcode)) {
       clearAccessToken()
       return requestWithRetry<T>(path, opts, false)
     }
+    throw e
   }
-  return res as T
 }
 
 export async function draftBatchGet(params: { offset: number, count: number }) {
