@@ -19,6 +19,7 @@ import { SearchTab } from '@/components/ui/search-tab'
 import { checkImage, toBase64 } from '@/utils'
 import { createExtraKeys } from '@/utils/editor'
 import { fileUpload } from '@/utils/file'
+import { ensureMpUploadReady } from '@/utils/ensure-mp-config'
 
 const store = useStore()
 const displayStore = useDisplayStore()
@@ -537,6 +538,8 @@ watch(isDark, () => {
 // 历史记录的定时器
 const historyTimer = ref<NodeJS.Timeout>()
 onMounted(() => {
+  // 确保公众号图床配置在编辑器加载时就完成初始化
+  ensureMpUploadReady()
   // 定时，30 秒记录一次文章的历史记录
   historyTimer.value = setInterval(() => {
     const currentPost = store.posts[store.currentPostIndex]

@@ -3,6 +3,7 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
 import { setupComponents } from './utils/setup-components'
+import { ensureMpUploadReady } from '@/utils/ensure-mp-config'
 
 import 'vue-sonner/style.css'
 import 'codemirror/lib/codemirror.css'
@@ -27,6 +28,9 @@ import 'codemirror/addon/dialog/dialog' // 搜索替换功能
 import 'codemirror/addon/dialog/dialog.css'
 
 setupComponents()
+
+// 应用启动阶段初始化公众号图床配置，保证任意页面（含素材库）可直接使用
+ensureMpUploadReady()
 
 const app = createApp(App)
 
