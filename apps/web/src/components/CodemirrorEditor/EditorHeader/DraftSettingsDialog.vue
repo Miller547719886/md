@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { useStore } from '@/stores'
@@ -16,6 +16,23 @@ const file = ref<File | null>(null)
 const previewUrl = ref<string>('')
 const working = ref(false)
 const store = useStore()
+
+const digest = ref('')
+
+function extractDigest(): string {
+  const div = document.createElement('div')
+  div.innerHTML = store.output
+  const para = div.querySelector('p')
+  const text = (para?.textContent || '').trim()
+  return text.slice(0, 54)
+}
+
+watch(() => props.open, (val) => {
+  if (val) {
+    // 打开时预填默认摘要（正文前54字）
+    digest.value = extractDigest()
+  }
+})
 
 function onFile(e: Event) {
   const input = e.target as HTMLInputElement
@@ -70,7 +87,7 @@ async function onConfirm() {
       article_type: 'newspic',
       title: heading?.textContent?.trim() || '未命名标题',
       author: '',
-      digest: para?.textContent?.trim() || '',
+      digest: (digest.value && digest.value.trim()) || extractDigest(),
       content: store.output,
       image_info: { image_list: [{ image_media_id: coverMediaId }] },
     }
@@ -110,8 +127,8 @@ function onCancel() {
         <DialogTitle>草稿设置</DialogTitle>
       </DialogHeader>
 
-      <div class="space-y-3">
-        <div class="text-sm text-muted-foreground">请选择封面来源（首张图片将作为封面图）。</div>
+    <div class="space-y-3">
+      <div class="text-sm text-muted-foreground">请选择封面来源（首张图片将作为封面图）。</div>
 
         <div class="flex items-center gap-3">
           <label class="text-sm">
@@ -122,6 +139,17 @@ function onCancel() {
             <input v-model="mode" type="radio" value="upload" class="mr-2">
             上传封面
           </label>
+        </div>
+
+        <div class="space-y-2">
+          <label class="text-sm font-medium">摘要（可选）</label>
+          <textarea
+            v-model="digest"
+            rows="3"
+            class="w-full rounded border p-2 text-sm"
+            placeholder="不填写则默认取正文前54个字"
+          />
+          <div class="text-xs text-muted-foreground">{{ digest?.length || 0 }}/200</div>
         </div>
 
         <div v-if="mode==='upload'" class="flex items-start gap-3">
