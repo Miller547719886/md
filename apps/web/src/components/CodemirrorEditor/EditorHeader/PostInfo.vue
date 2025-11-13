@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { draftAdd, draftUpdate, uploadContentImage } from '@/services/wechat'
+import PublishSettingsDialog from './PublishSettingsDialog.vue'
 import { useStore } from '@/stores'
 import { toast } from '@/utils/toast'
 
 const store = useStore()
 const saving = ref(false)
+const publishDialogOpen = ref(false)
 
 function extractTitleAndDigest(html: string) {
   const div = document.createElement(`div`)
@@ -53,6 +55,8 @@ async function saveDraft() {
     if (current?.wxMediaId) {
       await draftUpdate({ media_id: current.wxMediaId, index: 0, articles: article })
       toast.success(`草稿已更新`)
+      // 保存成功后打开发布设置弹窗
+      publishDialogOpen.value = true
     }
     else {
       const resp: any = await draftAdd({ articles: [article] })
@@ -60,6 +64,8 @@ async function saveDraft() {
       if (mediaId && current)
         current.wxMediaId = mediaId
       toast.success(`草稿已保存`)
+      // 新增成功后也打开发布设置弹窗
+      publishDialogOpen.value = true
     }
   }
   catch (e: any) {
@@ -91,5 +97,5 @@ async function saveDraft() {
     </TooltipProvider>
   </div>
 
-  <!-- 发布功能已禁用：无弹窗、无触发，仅展示 Tooltip 提示 -->
+  <PublishSettingsDialog v-model:open="publishDialogOpen" />
 </template>

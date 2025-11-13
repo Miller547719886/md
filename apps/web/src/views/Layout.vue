@@ -14,7 +14,7 @@ const links = [
   <div class="layout">
     <aside class="sidebar">
       <h1 class="brand">
-        文章平台
+        生涯重塑
       </h1>
       <nav>
         <RouterLink v-for="l in links" :key="l.to" :to="l.to" class="nav" :class="{ active: route.path === l.to }">

@@ -1,0 +1,135 @@
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { useStore } from '@/stores'
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Button } from '@/components/ui/button'
+import { draftUpdate, materialAdd } from '@/services/wechat'
+import { publishCurrentDraft } from '@/services/publish'
+import { toast } from '@/utils/toast'
+
+const props = defineProps<{
+  open: boolean
+}>()
+
+const emit = defineEmits([`update:open`, `published`])
+
+const visible = computed({
+  get: () => props.open,
+  set: v => emit('update:open', v),
+})
+
+const file = ref<File | null>(null)
+const previewUrl = ref<string>('')
+const uploading = ref(false)
+const publishing = ref(false)
+const store = useStore()
+
+function onFile(e: Event) {
+  const input = e.target as HTMLInputElement
+  const f = input.files?.[0]
+  if (f) {
+    file.value = f
+    previewUrl.value = URL.createObjectURL(f)
+  }
+}
+
+async function onConfirm() {
+  if (!file.value) {
+    toast.error('请先选择封面图片')
+    return
+  }
+  try {
+    // 在发布前确保内容已格式化并渲染，避免旧输出
+    await store.formatContent()
+    store.editorRefresh()
+    uploading.value = true
+    // 上传为永久素材（thumb），用于图文封面
+    const resp: any = await materialAdd({ type: 'thumb', file: file.value })
+    const mediaId = resp?.media_id
+    if (!mediaId)
+      throw new Error('未获取到封面 media_id')
+
+    uploading.value = false
+    publishing.value = true
+    // 若当前草稿已保存过（有 wxMediaId），先以相同内容补写 thumb_media_id 再发布，避免重复新增
+    const current: any = store.getPostById(store.currentPostId)
+    if (current?.wxMediaId) {
+      const div = document.createElement('div')
+      div.innerHTML = store.output
+      const heading = div.querySelector('h1, h2, h3, h4, h5, h6')
+      const para = div.querySelector('p')
+      const article = {
+        title: heading?.textContent?.trim() || '未命名标题',
+        author: '',
+        digest: para?.textContent?.trim() || '',
+        content: store.output,
+        thumb_media_id: mediaId,
+      }
+      await draftUpdate({ media_id: current.wxMediaId, index: 0, articles: article })
+      const pub = await publishCurrentDraft({ reuseMediaId: current.wxMediaId })
+      publishing.value = false
+      toast.success('发布任务已提交')
+      emit('published', pub)
+      visible.value = false
+      return
+    }
+
+    // 否则走新增草稿并发布路径
+    const pub = await publishCurrentDraft({ thumbMediaId: mediaId })
+    publishing.value = false
+    toast.success('发布任务已提交')
+    emit('published', pub)
+    visible.value = false
+  }
+  catch (e: any) {
+    uploading.value = false
+    publishing.value = false
+    toast.error(`发布失败：${e?.message || e}`)
+  }
+}
+
+function onCancel() {
+  visible.value = false
+}
+</script>
+
+<template>
+  <Dialog v-model:open="visible">
+    <DialogContent class="max-w-[520px]">
+      <DialogHeader>
+        <DialogTitle>发布设置</DialogTitle>
+      </DialogHeader>
+
+      <div class="space-y-3">
+        <div class="text-sm text-muted-foreground">
+          请上传本次发布的封面图片（必填）。
+        </div>
+
+        <div class="flex items-start gap-3">
+          <div class="w-[160px] h-[120px] bg-muted flex items-center justify-center overflow-hidden rounded border">
+            <img v-if="previewUrl" :src="previewUrl" alt="预览" class="object-cover w-full h-full">
+            <span v-else class="text-xs text-muted-foreground">无预览</span>
+          </div>
+          <div class="flex-1">
+            <input type="file" accept="image/*" @change="onFile">
+            <p class="mt-2 text-xs text-muted-foreground">建议尺寸：可用 900x383（2.35:1）或 900x900（1:1），大小≤2MB。</p>
+          </div>
+        </div>
+
+        <div v-if="uploading || publishing" class="text-sm text-muted-foreground">
+          <span v-if="uploading">正在上传封面…</span>
+          <span v-else-if="publishing">正在提交发布…</span>
+        </div>
+      </div>
+
+      <DialogFooter>
+        <Button variant="outline" :disabled="uploading || publishing" @click="onCancel">取消</Button>
+        <Button :disabled="uploading || publishing" @click="onConfirm">确定发布</Button>
+      </DialogFooter>
+    </DialogContent>
+  </Dialog>
+  
+</template>
+
+<style scoped>
+</style>

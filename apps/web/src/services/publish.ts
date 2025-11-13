@@ -36,30 +36,51 @@ async function replaceImagesWithWeChatUrls(html: string) {
   return div.innerHTML
 }
 
-export async function publishCurrentDraft() {
+export async function publishCurrentDraft(options?: { thumbMediaId?: string, reuseMediaId?: string }) {
   const store = useStore()
   // 依赖调用方已执行过格式化与渲染（prePost）
+  // 优先复用传入的已有草稿 media_id，避免重复新增
+  if (options?.reuseMediaId) {
+    const pubResp = await freePublishSubmit(options.reuseMediaId) as any
+    if ((pubResp as any).errcode && (pubResp as any).errcode !== 0)
+      throw new Error((pubResp as any).errmsg || `发布草稿失败`)
+    // 轮询逻辑见下方通用部分
+    const maxTries = 10
+    const delay = (ms: number) => new Promise(r => setTimeout(r, ms))
+    const articleId = (pubResp as any).publish_id || (pubResp as any).article_id
+    for (let i = 0; i < maxTries; i++) {
+      try {
+        const detail: any = await freePublishGetArticle(articleId)
+        if (!detail?.errcode)
+          return pubResp
+      }
+      catch {}
+      await delay(1500)
+    }
+    return pubResp
+  }
+
+  // 否则按当前内容构建并新增草稿再发布
   let html = store.output
   html = await replaceImagesWithWeChatUrls(html)
   const { title, digest } = extractTitleAndDigest(html)
-  const payload = {
+  const payload: any = {
     articles: [
       {
         title,
         author: ``,
         digest,
         content: html,
-        // 若后续接入封面，设置 thumb_media_id
       },
     ],
   }
+  if (options?.thumbMediaId)
+    (payload.articles[0] as any).thumb_media_id = options.thumbMediaId
   const addResp = await draftAdd(payload) as any
-  if ((addResp as any).errcode && (addResp as any).errcode !== 0) {
+  if ((addResp as any).errcode && (addResp as any).errcode !== 0)
     throw new Error((addResp as any).errmsg || `新增草稿失败`)
-  }
   const mediaId = (addResp as any).media_id
-  if (!mediaId)
-    throw new Error(`新增草稿返回缺少 media_id`)
+  if (!mediaId) throw new Error(`新增草稿返回缺少 media_id`)
   const pubResp = await freePublishSubmit(mediaId) as any
   if ((pubResp as any).errcode && (pubResp as any).errcode !== 0) {
     throw new Error((pubResp as any).errmsg || `发布草稿失败`)
