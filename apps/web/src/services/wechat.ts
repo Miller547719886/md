@@ -86,8 +86,9 @@ export async function freePublishDelete(article_id: string) {
 
 // 上传图文消息内的图片（返回可用于内容的 URL）
 export async function uploadContentImage(file: File) {
-  // 对应官方接口：/cgi-bin/media/uploadimg
-  return requestWithRetry<{ url: string }>(`/cgi-bin/media/uploadimg`, { method: `POST`, data: { media: file, upload: true } })
+  // 改为永久素材上传，获取可用于内容的 URL 以及 media_id（用于图片消息 image_info）
+  // 对应官方接口：/cgi-bin/material/add_material?type=image
+  return requestWithRetry<{ media_id: string, url: string }>(`/cgi-bin/material/add_material?type=image`, { method: `POST`, data: { media: file, upload: true } })
 }
 
 // 素材管理（永久素材）

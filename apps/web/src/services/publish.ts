@@ -12,10 +12,11 @@ function extractTitleAndDigest(html: string) {
   }
 }
 
-async function replaceImagesWithWeChatUrls(html: string) {
+async function replaceImagesWithWeChatUrlsAndCollectMedia(html: string) {
   const div = document.createElement(`div`)
   div.innerHTML = html
   const imgs = Array.from(div.querySelectorAll(`img`))
+  const mediaIds: string[] = []
   for (const img of imgs) {
     const src = img.getAttribute(`src`) || ``
     if (!src || /mmbiz\.qpic\.cn|mmbiz\.qlogo\.cn/.test(src))
@@ -24,16 +25,18 @@ async function replaceImagesWithWeChatUrls(html: string) {
       const resp = await fetch(src)
       const blob = await resp.blob()
       const file = new File([blob], `image.jpg`, { type: blob.type || `image/jpeg` })
-      const { url } = await uploadContentImage(file) as any
+      const { url, media_id } = await uploadContentImage(file) as any
       if (url)
         img.setAttribute(`src`, url)
+      if (media_id)
+        mediaIds.push(media_id)
     }
     catch (e) {
       // 忽略单张失败，继续其它图片
       console.warn(`上传内容图片失败`, e)
     }
   }
-  return div.innerHTML
+  return { html: div.innerHTML, mediaIds }
 }
 
 export async function publishCurrentDraft(options?: { thumbMediaId?: string, reuseMediaId?: string }) {
@@ -62,15 +65,21 @@ export async function publishCurrentDraft(options?: { thumbMediaId?: string, reu
 
   // 否则按当前内容构建并新增草稿再发布
   let html = store.output
-  html = await replaceImagesWithWeChatUrls(html)
+  const replaced = await replaceImagesWithWeChatUrlsAndCollectMedia(html)
+  html = replaced.html
+  const uploadedMediaIds = replaced.mediaIds.slice(0, 20)
   const { title, digest } = extractTitleAndDigest(html)
   const payload: any = {
     articles: [
       {
+        article_type: 'newspic',
         title,
         author: ``,
         digest,
         content: html,
+        image_info: {
+          image_list: uploadedMediaIds.map(id => ({ image_media_id: id })),
+        },
       },
     ],
   }

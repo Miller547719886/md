@@ -19,10 +19,11 @@ function extractTitleAndDigest(html: string) {
   }
 }
 
-async function replaceImagesWithWeChatUrls(html: string) {
+async function replaceImagesWithWeChatUrlsAndCollectMedia(html: string) {
   const div = document.createElement(`div`)
   div.innerHTML = html
   const imgs = Array.from(div.querySelectorAll(`img`))
+  const mediaIds: string[] = []
   for (const img of imgs) {
     const src = img.getAttribute(`src`) || ``
     if (!src || /mmbiz\.qpic\.cn|mmbiz\.qlogo\.cn/.test(src))
@@ -31,15 +32,17 @@ async function replaceImagesWithWeChatUrls(html: string) {
       const resp = await fetch(src)
       const blob = await resp.blob()
       const file = new File([blob], `image.jpg`, { type: blob.type || `image/jpeg` })
-      const { url } = await uploadContentImage(file) as any
+      const { url, media_id } = await uploadContentImage(file) as any
       if (url)
         img.setAttribute(`src`, url)
+      if (media_id)
+        mediaIds.push(media_id)
     }
     catch (e) {
       console.warn(`上传内容图片失败`, e)
     }
   }
-  return div.innerHTML
+  return { html: div.innerHTML, mediaIds }
 }
 
 async function saveDraft() {
@@ -48,9 +51,18 @@ async function saveDraft() {
     await store.formatContent()
     store.editorRefresh()
     let html = store.output
-    html = await replaceImagesWithWeChatUrls(html)
+    const replaced = await replaceImagesWithWeChatUrlsAndCollectMedia(html)
+    html = replaced.html
+    const mediaIds = replaced.mediaIds.slice(0, 20)
     const { title, digest } = extractTitleAndDigest(html)
-    const article = { title, author: ``, digest, content: html }
+    const article: any = {
+      article_type: 'newspic',
+      title,
+      author: ``,
+      digest,
+      content: html,
+      image_info: { image_list: mediaIds.map(id => ({ image_media_id: id })) },
+    }
     const current = store.getPostById(store.currentPostId)
     if (current?.wxMediaId) {
       await draftUpdate({ media_id: current.wxMediaId, index: 0, articles: article })

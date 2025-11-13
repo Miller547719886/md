@@ -3,7 +3,7 @@ import { ref, computed } from 'vue'
 import { useStore } from '@/stores'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { draftUpdate, materialAdd } from '@/services/wechat'
+import { draftUpdate, materialAdd, uploadContentImage } from '@/services/wechat'
 import { publishCurrentDraft } from '@/services/publish'
 import { toast } from '@/utils/toast'
 
@@ -42,6 +42,26 @@ async function onConfirm() {
     // 在发布前确保内容已格式化并渲染，避免旧输出
     await store.formatContent()
     store.editorRefresh()
+    // 收集正文图片并转换为微信永久素材 URL 与 media_id
+    const div = document.createElement('div')
+    div.innerHTML = store.output
+    const imgs = Array.from(div.querySelectorAll('img'))
+    const imageMediaIds: string[] = []
+    for (const img of imgs) {
+      const src = img.getAttribute('src') || ''
+      if (!src || /mmbiz\.qpic\.cn|mmbiz\.qlogo\.cn/.test(src)) continue
+      try {
+        const r = await fetch(src)
+        const b = await r.blob()
+        const f = new File([b], 'image.jpg', { type: b.type || 'image/jpeg' })
+        const { url, media_id } = await uploadContentImage(f) as any
+        if (url) img.setAttribute('src', url)
+        if (media_id) imageMediaIds.push(media_id)
+      } catch (e) {
+        console.warn('上传内容图片失败', e)
+      }
+    }
+    const finalHtml = div.innerHTML
     uploading.value = true
     // 上传为永久素材（thumb），用于图文封面
     const resp: any = await materialAdd({ type: 'thumb', file: file.value })
@@ -51,19 +71,21 @@ async function onConfirm() {
 
     uploading.value = false
     publishing.value = true
-    // 若当前草稿已保存过（有 wxMediaId），先以相同内容补写 thumb_media_id 再发布，避免重复新增
+    // 若当前草稿已保存过（有 wxMediaId），先以相同内容补写 thumb_media_id 与 image_info 再发布，避免重复新增
     const current: any = store.getPostById(store.currentPostId)
     if (current?.wxMediaId) {
-      const div = document.createElement('div')
-      div.innerHTML = store.output
-      const heading = div.querySelector('h1, h2, h3, h4, h5, h6')
-      const para = div.querySelector('p')
+      const temp = document.createElement('div')
+      temp.innerHTML = finalHtml
+      const heading = temp.querySelector('h1, h2, h3, h4, h5, h6')
+      const para = temp.querySelector('p')
       const article = {
+        article_type: 'newspic',
         title: heading?.textContent?.trim() || '未命名标题',
         author: '',
         digest: para?.textContent?.trim() || '',
-        content: store.output,
+        content: finalHtml,
         thumb_media_id: mediaId,
+        image_info: { image_list: imageMediaIds.slice(0, 20).map(id => ({ image_media_id: id })) },
       }
       await draftUpdate({ media_id: current.wxMediaId, index: 0, articles: article })
       const pub = await publishCurrentDraft({ reuseMediaId: current.wxMediaId })
