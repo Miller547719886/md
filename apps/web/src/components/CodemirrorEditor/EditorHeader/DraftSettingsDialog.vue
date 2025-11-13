@@ -122,7 +122,7 @@ function onCancel() {
 
 <template>
   <Dialog v-model:open="visible">
-    <DialogContent class="max-w-[520px]">
+    <DialogContent class="max-w-[520px] w-[520px] overflow-x-hidden">
       <DialogHeader>
         <DialogTitle>草稿设置</DialogTitle>
       </DialogHeader>
@@ -152,13 +152,13 @@ function onCancel() {
           <div class="text-xs text-muted-foreground">{{ digest?.length || 0 }}/200</div>
         </div>
 
-        <div v-if="mode==='upload'" class="flex items-start gap-3">
+        <div v-if="mode==='upload'" class="flex items-start gap-3 min-w-0">
           <div class="w-[160px] h-[120px] bg-muted flex items-center justify-center overflow-hidden rounded border">
             <img v-if="previewUrl" :src="previewUrl" alt="预览" class="object-cover w-full h-full">
             <span v-else class="text-xs text-muted-foreground">无预览</span>
           </div>
-          <div class="flex-1">
-            <input type="file" accept="image/*" @change="onFile">
+          <div class="flex-1 min-w-0">
+            <input type="file" accept="image/*" class="block w-full max-w-full" style="max-width:100%" @change="onFile">
             <p class="mt-2 text-xs text-muted-foreground">将上传为永久素材，大小≤2MB。</p>
           </div>
         </div>
