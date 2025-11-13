@@ -362,7 +362,7 @@ async function mpFileUpload(file: File) {
     url = url.replace(`https://api.weixin.qq.com`, proxyOrigin)
   }
 
-  const res = await fetch<any, { url: string }>(url, requestOptions)
+  const res = await fetch<any, any>(url, requestOptions)
 
   if (!res.url) {
     throw new Error(`上传失败，未获取到URL`)
@@ -372,6 +372,17 @@ async function mpFileUpload(file: File) {
   if (proxyOrigin && window.location.href.startsWith(`http`)) {
     imageUrl = `https://wsrv.nl?url=${encodeURIComponent(imageUrl)}`
   }
+
+  // 持久化 url -> media_id 映射，用于后续草稿/发布阶段回填 image_media_id
+  try {
+    const mapKey = 'mpImageMediaMap'
+    const raw = localStorage.getItem(mapKey)
+    const map = raw ? JSON.parse(raw) : {}
+    if (res.media_id) {
+      map[imageUrl] = res.media_id
+      localStorage.setItem(mapKey, JSON.stringify(map))
+    }
+  } catch {}
 
   return imageUrl
 }

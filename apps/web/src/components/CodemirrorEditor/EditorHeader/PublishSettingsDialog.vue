@@ -46,17 +46,27 @@ async function onConfirm() {
     const div = document.createElement('div')
     div.innerHTML = store.output
     const imgs = Array.from(div.querySelectorAll('img'))
+    let urlMap: Record<string, string> = {}
+    try {
+      const raw = localStorage.getItem('mpImageMediaMap')
+      urlMap = raw ? JSON.parse(raw) : {}
+    } catch {}
     const imageMediaIds: string[] = []
     for (const img of imgs) {
       const src = img.getAttribute('src') || ''
       if (!src || /mmbiz\.qpic\.cn|mmbiz\.qlogo\.cn/.test(src)) continue
       try {
+        if (urlMap[src]) {
+          imageMediaIds.push(urlMap[src])
+          continue
+        }
         const r = await fetch(src)
         const b = await r.blob()
         const f = new File([b], 'image.jpg', { type: b.type || 'image/jpeg' })
         const { url, media_id } = await uploadContentImage(f) as any
         if (url) img.setAttribute('src', url)
         if (media_id) imageMediaIds.push(media_id)
+        try { urlMap[url] = media_id; localStorage.setItem('mpImageMediaMap', JSON.stringify(urlMap)) } catch {}
       } catch (e) {
         console.warn('上传内容图片失败', e)
       }

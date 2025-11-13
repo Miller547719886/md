@@ -17,11 +17,21 @@ async function replaceImagesWithWeChatUrlsAndCollectMedia(html: string) {
   div.innerHTML = html
   const imgs = Array.from(div.querySelectorAll(`img`))
   const mediaIds: string[] = []
+  // 读取本地 url->media_id 映射，优先使用，缺失时再上传
+  let urlMap: Record<string, string> = {}
+  try {
+    const raw = localStorage.getItem('mpImageMediaMap')
+    urlMap = raw ? JSON.parse(raw) : {}
+  } catch {}
   for (const img of imgs) {
     const src = img.getAttribute(`src`) || ``
     if (!src || /mmbiz\.qpic\.cn|mmbiz\.qlogo\.cn/.test(src))
       continue
     try {
+      if (urlMap[src]) {
+        mediaIds.push(urlMap[src])
+        continue
+      }
       const resp = await fetch(src)
       const blob = await resp.blob()
       const file = new File([blob], `image.jpg`, { type: blob.type || `image/jpeg` })
@@ -30,6 +40,11 @@ async function replaceImagesWithWeChatUrlsAndCollectMedia(html: string) {
         img.setAttribute(`src`, url)
       if (media_id)
         mediaIds.push(media_id)
+      // 保存新得到的映射
+      try {
+        urlMap[url] = media_id
+        localStorage.setItem('mpImageMediaMap', JSON.stringify(urlMap))
+      } catch {}
     }
     catch (e) {
       // 忽略单张失败，继续其它图片
