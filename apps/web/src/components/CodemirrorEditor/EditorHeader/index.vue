@@ -89,19 +89,30 @@ async function copy() {
       const temp = clipboardDiv.innerHTML
 
       if (copyMode.value === `txt`) {
-        // execCommand 已废弃，且会丢失 SVG 等复杂内容
         try {
           const plainText = clipboardDiv.textContent || ``
-          const clipboardItem = new ClipboardItem({
-            'text/html': new Blob([temp], { type: `text/html` }),
-            'text/plain': new Blob([plainText], { type: `text/plain` }),
-          })
-          // FIX: https://stackoverflow.com/questions/62327358/javascript-clipboard-api-safari-ios-notallowederror-message
-          // NotAllowedError: the request is not allowed by the user agent or the platform in the current context,
-          // possibly because the user denied permission.
-          setTimeout(async () => {
-            await navigator.clipboard.write([clipboardItem])
-          }, 0)
+          const hasClipboardItem = typeof window.ClipboardItem !== `undefined` && !!navigator.clipboard?.write
+          if (hasClipboardItem) {
+            const clipboardItem = new window.ClipboardItem({
+              'text/html': new Blob([temp], { type: `text/html` }),
+              'text/plain': new Blob([plainText], { type: `text/plain` }),
+            })
+            // FIX: Safari / iOS 上 NotAllowedError 权限问题
+            setTimeout(async () => {
+              await navigator.clipboard!.write([clipboardItem])
+            }, 0)
+          }
+          else {
+            // 回退方案：选中 DOM 内容并使用 execCommand('copy')
+            const range = document.createRange()
+            range.selectNodeContents(clipboardDiv)
+            const sel = window.getSelection()
+            sel?.removeAllRanges()
+            sel?.addRange(range)
+            const ok = document.execCommand(`copy`)
+            if (!ok)
+              throw new Error(`当前浏览器不支持 Clipboard API，请手动复制`)
+          }
         }
         catch (error) {
           toast.error(`复制失败，请联系开发者。${error}`)
