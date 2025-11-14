@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { useStore } from '@/stores'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { draftUpdate, materialAdd, uploadContentImage } from '@/services/wechat'
 import { publishCurrentDraft } from '@/services/publish'
 import { toast } from '@/utils/toast'
+import ImageCropperDialog from '@/components/common/ImageCropperDialog.vue'
 
 const props = defineProps<{
   open: boolean
@@ -23,6 +24,8 @@ const previewUrl = ref<string>('')
 const uploading = ref(false)
 const publishing = ref(false)
 const store = useStore()
+const cropperOpen = ref(false)
+const coverCrop = ref<{ x1: number, y1: number, x2: number, y2: number } | null>(null)
 
 function onFile(e: Event) {
   const input = e.target as HTMLInputElement
@@ -30,6 +33,8 @@ function onFile(e: Event) {
   if (f) {
     file.value = f
     previewUrl.value = URL.createObjectURL(f)
+    coverCrop.value = null
+    cropperOpen.value = true
   }
 }
 
@@ -81,7 +86,7 @@ async function onConfirm() {
 
     uploading.value = false
     publishing.value = true
-    // 若当前草稿已保存过（有 wxMediaId），先以相同内容补写 thumb_media_id 与 image_info 再发布，避免重复新增
+    // 若当前草稿已保存过（有 wxMediaId），先以相同内容补写 image_info/cover_info 再发布，避免重复新增
     const current: any = store.getPostById(store.currentPostId)
     if (current?.wxMediaId) {
       const temp = document.createElement('div')
@@ -94,8 +99,12 @@ async function onConfirm() {
         author: '',
         digest: para?.textContent?.trim() || '',
         content: finalHtml,
-        thumb_media_id: mediaId,
-        image_info: { image_list: imageMediaIds.slice(0, 20).map(id => ({ image_media_id: id })) },
+        image_info: { image_list: [{ image_media_id: mediaId }, ...imageMediaIds.slice(0, 19).map(id => ({ image_media_id: id }))] },
+        cover_info: coverCrop.value ? {
+          crop_percent_list: [
+            { ratio: '2.35_1', x1: String(coverCrop.value.x1), y1: String(coverCrop.value.y1), x2: String(coverCrop.value.x2), y2: String(coverCrop.value.y2) },
+          ],
+        } : undefined,
       }
       await draftUpdate({ media_id: current.wxMediaId, index: 0, articles: article })
       const pub = await publishCurrentDraft({ reuseMediaId: current.wxMediaId })
@@ -106,8 +115,8 @@ async function onConfirm() {
       return
     }
 
-    // 否则走新增草稿并发布路径
-    const pub = await publishCurrentDraft({ thumbMediaId: mediaId })
+    // 否则走新增草稿并发布路径（传入封面与裁剪信息）
+    const pub = await publishCurrentDraft({ coverMediaId: mediaId, coverCrop: coverCrop.value || undefined })
     publishing.value = false
     toast.success('发布任务已提交')
     emit('published', pub)
@@ -139,7 +148,7 @@ function onCancel() {
 
         <div class="flex items-start gap-3 min-w-0">
           <div class="w-[160px] h-[120px] bg-muted flex items-center justify-center overflow-hidden rounded border">
-            <img v-if="previewUrl" :src="previewUrl" alt="预览" class="object-cover w-full h-full">
+            <img v-if="previewUrl" :src="previewUrl" alt="预览" class="max-w-full h-auto">
             <span v-else class="text-xs text-muted-foreground">无预览</span>
           </div>
           <div class="flex-1 min-w-0">
@@ -160,6 +169,7 @@ function onCancel() {
       </DialogFooter>
     </DialogContent>
   </Dialog>
+  <ImageCropperDialog v-model:open="cropperOpen" :src="previewUrl" :ratio="2.35" @confirm="(c:any)=>{ coverCrop = c }" />
   
 </template>
 

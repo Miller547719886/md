@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { useStore } from '@/stores'
 import { draftAdd, draftUpdate } from '@/services/wechat'
 import { uploadContentImage } from '@/services/wechat'
 import { toast } from '@/utils/toast'
+import ImageCropperDialog from '@/components/common/ImageCropperDialog.vue'
 
 const props = defineProps<{ open: boolean }>()
 const emit = defineEmits([`update:open`, `saved`])
@@ -15,6 +16,8 @@ const mode = ref<'content-first' | 'upload'>('content-first')
 const file = ref<File | null>(null)
 const previewUrl = ref<string>('')
 const working = ref(false)
+const cropperOpen = ref(false)
+const coverCrop = ref<{ x1: number, y1: number, x2: number, y2: number } | null>(null)
 const store = useStore()
 
 const digest = ref('')
@@ -40,6 +43,9 @@ function onFile(e: Event) {
   if (f) {
     file.value = f
     previewUrl.value = URL.createObjectURL(f)
+    // 选择文件后立即打开裁剪弹窗
+    coverCrop.value = null
+    cropperOpen.value = true
   }
 }
 
@@ -90,6 +96,11 @@ async function onConfirm() {
       digest: (digest.value && digest.value.trim()) || extractDigest(),
       content: store.output,
       image_info: { image_list: [{ image_media_id: coverMediaId }] },
+      cover_info: coverCrop.value ? {
+        crop_percent_list: [
+          { ratio: '2.35_1', x1: String(coverCrop.value.x1), y1: String(coverCrop.value.y1), x2: String(coverCrop.value.x2), y2: String(coverCrop.value.y2) },
+        ],
+      } : undefined,
     }
 
     const current = store.getPostById(store.currentPostId) as any
@@ -154,12 +165,12 @@ function onCancel() {
 
         <div v-if="mode==='upload'" class="flex items-start gap-3 min-w-0">
           <div class="w-[160px] h-[120px] bg-muted flex items-center justify-center overflow-hidden rounded border">
-            <img v-if="previewUrl" :src="previewUrl" alt="预览" class="object-cover w-full h-full">
+            <img v-if="previewUrl" :src="previewUrl" alt="预览" class="max-w-full h-auto">
             <span v-else class="text-xs text-muted-foreground">无预览</span>
           </div>
           <div class="flex-1 min-w-0">
             <input type="file" accept="image/*" class="block w-full max-w-full" style="max-width:100%" @change="onFile">
-            <p class="mt-2 text-xs text-muted-foreground">将上传为永久素材，大小≤2MB。</p>
+            <p class="mt-2 text-xs text-muted-foreground">将上传为永久素材，大小≤2MB。选择后会自动进入裁剪。</p>
           </div>
         </div>
 
@@ -172,6 +183,8 @@ function onCancel() {
       </DialogFooter>
     </DialogContent>
   </Dialog>
+
+  <ImageCropperDialog v-model:open="cropperOpen" :src="previewUrl" :ratio="2.35" @confirm="(c:any)=>{ coverCrop = c }" />
 </template>
 
 <style scoped></style>

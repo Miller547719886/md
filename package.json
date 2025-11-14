@@ -34,7 +34,9 @@
     "shx": "^0.4.0",
     "simple-git-hooks": "^2.12.1",
     "typescript": "~5.9.2",
-    "vue-tsc": "^3.0.6"
+    "vue-tsc": "^3.0.6",
+    "jquery": "^3.7.1",
+    "jcrop": "^0.9.15"
   },
   "simple-git-hooks": {
     "pre-commit": "echo 'pre-commit: skip eslint'"

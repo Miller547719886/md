@@ -54,7 +54,7 @@ async function replaceImagesWithWeChatUrlsAndCollectMedia(html: string) {
   return { html: div.innerHTML, mediaIds }
 }
 
-export async function publishCurrentDraft(options?: { thumbMediaId?: string, reuseMediaId?: string }) {
+export async function publishCurrentDraft(options?: { thumbMediaId?: string, reuseMediaId?: string, coverMediaId?: string, coverCrop?: { x1: number, y1: number, x2: number, y2: number } }) {
   const store = useStore()
   // 依赖调用方已执行过格式化与渲染（prePost）
   // 优先复用传入的已有草稿 media_id，避免重复新增
@@ -82,7 +82,11 @@ export async function publishCurrentDraft(options?: { thumbMediaId?: string, reu
   let html = store.output
   const replaced = await replaceImagesWithWeChatUrlsAndCollectMedia(html)
   html = replaced.html
-  const uploadedMediaIds = replaced.mediaIds.slice(0, 20)
+  let uploadedMediaIds = replaced.mediaIds.slice(0, 20)
+  // 若传入封面 media_id，则置于首位
+  if (options?.coverMediaId) {
+    uploadedMediaIds = [options.coverMediaId, ...uploadedMediaIds.filter(id => id !== options.coverMediaId)].slice(0, 20)
+  }
   const { title, digest } = extractTitleAndDigest(html)
   const payload: any = {
     articles: [
@@ -95,6 +99,11 @@ export async function publishCurrentDraft(options?: { thumbMediaId?: string, reu
         image_info: {
           image_list: uploadedMediaIds.map(id => ({ image_media_id: id })),
         },
+        cover_info: options?.coverCrop ? {
+          crop_percent_list: [
+            { ratio: '2.35_1', x1: String(options.coverCrop.x1), y1: String(options.coverCrop.y1), x2: String(options.coverCrop.x2), y2: String(options.coverCrop.y2) },
+          ],
+        } : undefined,
       },
     ],
   }
