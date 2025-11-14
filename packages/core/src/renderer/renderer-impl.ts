@@ -211,7 +211,6 @@ export function initRenderer(opts: IOpts): RendererAPI {
     }
     return `
       <blockquote ${styles(`blockquote`)}>
-        <p ${styles(`blockquote_p`)}>点击<span style="color: #576B95"> 上方蓝字 </span>关注我们，了解更多生涯资讯~</p>
         <p ${styles(`blockquote_p`)}>全文共 ${readingTime?.words} 字，约需 ${Math.ceil(readingTime?.minutes)} 分钟完成阅读。</p>
       </blockquote>
     `
