@@ -66,8 +66,17 @@ async function copy() {
   if (copyMode.value === `md`) {
     const mdContent = editor.value?.getValue() || ``
     await copyContent(mdContent)
-    toast.success(`已复制 Markdown 源码到剪贴板。`)
-    window.open(`https://mp.weixin.qq.com/cgi-bin/appmsg`, `_blank`, `noreferrer`)
+    toast.success(
+      `已复制 Markdown 源码到剪贴板，可直接到公众号后台粘贴。`,
+      {
+        action: {
+          label: `去粘贴`,
+          onClick: () => {
+            window.open(`https://mp.weixin.qq.com/cgi-bin/appmsg`, `_blank`, `noreferrer`)
+          },
+        },
+      },
+    )
     return
   }
 
@@ -119,11 +128,18 @@ async function copy() {
         await copyContent(store.editorContent2HTML())
       }
 
-      // 输出提示
-      toast.success(`复制成功, 去创建草稿`)
-
-      // 在新窗口中打开微信公众平台草稿页，方便用户粘贴
-      window.open(`https://mp.weixin.qq.com/cgi-bin/appmsg`, `_blank`, `noreferrer`)
+      // 输出提示：已复制渲染内容，并提供“去粘贴”入口
+      toast.success(
+        `已复制渲染后的内容到剪贴板，可直接到公众号后台粘贴。`,
+        {
+          action: {
+            label: `去粘贴`,
+            onClick: () => {
+              window.open(`https://mp.weixin.qq.com/cgi-bin/appmsg`, `_blank`, `noreferrer`)
+            },
+          },
+        },
+      )
       window.dispatchEvent(
         new CustomEvent(`copyToMp`, {
           detail: {

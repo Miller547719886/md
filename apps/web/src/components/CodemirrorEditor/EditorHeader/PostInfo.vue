@@ -121,36 +121,33 @@ onBeforeMount(() => {
 
 <template>
   <Dialog v-model:open="dialogVisible" @update:open="onUpdate">
-    <DialogTrigger as-child>
-      <TooltipProvider :delay-duration="100">
-        <Tooltip>
-          <TooltipTrigger as-child>
-            <Button
-              v-if="!store.isMobile"
-              variant="outline"
-              disabled
-              class="cursor-not-allowed opacity-70"
-            >
-              发布
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <span>
-              受微信官方平台规则限制,无法在此发布.
-            </span>
-            <Primitive
-              as="a"
-              class="ml-1 text-blue-500 underline"
-              href="https://mp.weixin.qq.com/cgi-bin/appmsg"
-              target="_blank"
-              rel="noreferrer"
-            >
-              去发布
-            </Primitive>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    </DialogTrigger>
+    <TooltipProvider :delay-duration="100">
+      <Tooltip>
+        <TooltipTrigger as-child>
+          <Button
+            v-if="!store.isMobile"
+            variant="outline"
+            aria-disabled="true"
+            class="cursor-not-allowed opacity-70"
+            @click.stop
+          >
+            发布
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <span>受官方平台限制，个人主体注册的公众号无法调用发布相关api接口，请到官方平台发布文章。</span>
+          <Primitive
+            as="a"
+            class="ml-1 text-blue-500 underline"
+            href="https://mp.weixin.qq.com/cgi-bin/appmsg"
+            target="_blank"
+            rel="noreferrer"
+          >
+            去发布
+          </Primitive>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
     <DialogContent>
       <DialogHeader>
         <DialogTitle>发布</DialogTitle>

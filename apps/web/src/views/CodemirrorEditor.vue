@@ -77,8 +77,8 @@ function toggleView() {
   showEditor.value = !showEditor.value
 }
 
-// 作者&审核编辑区相关状态
-const isAuthorReviewExpanded = ref(false)
+// 作者&审核编辑区相关状态（默认展开）
+const isAuthorReviewExpanded = ref(true)
 
 // 切换作者&审核面板展开状态
 function toggleAuthorReviewPanel() {
@@ -88,8 +88,8 @@ function toggleAuthorReviewPanel() {
   })
 }
 
-// 参考文献编辑区相关状态
-const isReferencesExpanded = ref(false)
+// 参考文献编辑区相关状态（默认展开）
+const isReferencesExpanded = ref(true)
 
 // 切换参考文献面板展开状态
 function toggleReferencesPanel() {
