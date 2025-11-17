@@ -5,7 +5,7 @@ import { CheckboxIndicator, CheckboxRoot, Primitive } from 'radix-vue'
 import { useStore } from '@/stores'
 
 const store = useStore()
-const { output, editor } = storeToRefs(store)
+// const { output, editor } = storeToRefs(store)
 
 const dialogVisible = ref(false)
 const extensionInstalled = ref(false)
@@ -23,45 +23,45 @@ const form = ref<Post>({
 
 const allowPost = computed(() => extensionInstalled.value && form.value.accounts.some(a => a.checked))
 
-async function prePost() {
-  // 先执行格式化前置操作
-  await store.formatContent()
+// async function prePost() {
+//   // 先执行格式化前置操作
+//   await store.formatContent()
 
-  if (extensionInstalled.value && allAccounts.value.length === 0) {
-    await getAccounts()
-  }
+//   if (extensionInstalled.value && allAccounts.value.length === 0) {
+//     await getAccounts()
+//   }
 
-  let auto: Post = {
-    thumb: ``,
-    title: ``,
-    desc: ``,
-    content: ``,
-    markdown: ``,
-    accounts: [],
-  }
-  const accounts = allAccounts.value.filter(a => ![`ipfs`].includes(a.type))
-  try {
-    auto = {
-      thumb: document.querySelector<HTMLImageElement>(`#output img`)?.src ?? ``,
-      title: [1, 2, 3, 4, 5, 6]
-        .map(h => document.querySelector(`#output h${h}`)!)
-        .find(h => h)
-        ?.textContent ?? ``,
-      desc: document.querySelector(`#output p`)?.textContent?.trim() ?? ``,
-      content: output.value,
-      markdown: editor.value?.getValue() ?? ``,
-      accounts,
-    }
-  }
-  catch (error) {
-    console.log(`error`, error)
-  }
-  finally {
-    form.value = {
-      ...auto,
-    }
-  }
-}
+//   let auto: Post = {
+//     thumb: ``,
+//     title: ``,
+//     desc: ``,
+//     content: ``,
+//     markdown: ``,
+//     accounts: [],
+//   }
+//   const accounts = allAccounts.value.filter(a => ![`ipfs`].includes(a.type))
+//   try {
+//     auto = {
+//       thumb: document.querySelector<HTMLImageElement>(`#output img`)?.src ?? ``,
+//       title: [1, 2, 3, 4, 5, 6]
+//         .map(h => document.querySelector(`#output h${h}`)!)
+//         .find(h => h)
+//         ?.textContent ?? ``,
+//       desc: document.querySelector(`#output p`)?.textContent?.trim() ?? ``,
+//       content: output.value,
+//       markdown: editor.value?.getValue() ?? ``,
+//       accounts,
+//     }
+//   }
+//   catch (error) {
+//     console.log(`error`, error)
+//   }
+//   finally {
+//     form.value = {
+//       ...auto,
+//     }
+//   }
+// }
 
 declare global {
   interface Window {
