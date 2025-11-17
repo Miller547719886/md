@@ -186,13 +186,19 @@ const mpSchema = computed(() =>
   })),
 )
 
-const mpConfig = ref(localStorage.getItem(`mpConfig`)
-  ? JSON.parse(localStorage.getItem(`mpConfig`)!)
-  : {
-      proxyOrigin: `https://ops.t.shijieu.cn`,
-      appID: `wxfcf47c89e4d8cc14`,
-      appsecret: `bf1aa66b610b6d4da1c7ebb456446c57`,
-    })
+// 公众号图床默认配置：如本地无配置，则自动写入默认绑定信息
+const storedMpConfig = localStorage.getItem(`mpConfig`)
+const defaultMpConfig = {
+  proxyOrigin: `https://ops.t.shijieu.cn`,
+  appID: `wxd7ab5c47c6af8afc`,
+  appsecret: `0b13d51ce03d8e53011bb078a6c2b640`,
+}
+
+if (!storedMpConfig) {
+  localStorage.setItem(`mpConfig`, JSON.stringify(defaultMpConfig))
+}
+
+const mpConfig = ref(storedMpConfig ? JSON.parse(storedMpConfig) : defaultMpConfig)
 
 function mpSubmit(formValues: any) {
   localStorage.setItem(`mpConfig`, JSON.stringify(formValues))
