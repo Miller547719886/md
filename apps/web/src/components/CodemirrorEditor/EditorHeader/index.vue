@@ -67,6 +67,7 @@ async function copy() {
     const mdContent = editor.value?.getValue() || ``
     await copyContent(mdContent)
     toast.success(`已复制 Markdown 源码到剪贴板。`)
+    window.open(`https://mp.weixin.qq.com/cgi-bin/appmsg`, `_blank`, `noreferrer`)
     return
   }
 
@@ -119,11 +120,10 @@ async function copy() {
       }
 
       // 输出提示
-      toast.success(
-        copyMode.value === `html`
-          ? `已格式化并复制 HTML 源码，请进行下一步操作。`
-          : `已格式化并复制渲染后的内容到剪贴板，可直接到公众号后台粘贴。`,
-      )
+      toast.success(`复制成功, 去创建草稿`)
+
+      // 在新窗口中打开微信公众平台草稿页，方便用户粘贴
+      window.open(`https://mp.weixin.qq.com/cgi-bin/appmsg`, `_blank`, `noreferrer`)
       window.dispatchEvent(
         new CustomEvent(`copyToMp`, {
           detail: {

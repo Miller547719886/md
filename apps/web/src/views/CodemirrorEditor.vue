@@ -626,7 +626,7 @@ onUnmounted(() => {
                   class="cursor-pointer px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted/40 transition-colors flex items-center justify-between"
                   @click="toggleAuthorReviewPanel"
                 >
-                  <span>作者&审核编辑区</span>
+                  <span>作者&审核</span>
                   <svg
                     class="w-3 h-3 transition-transform duration-200"
                     :class="{ 'rotate-180': isAuthorReviewExpanded }"
@@ -668,7 +668,7 @@ onUnmounted(() => {
                   class="cursor-pointer px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted/40 transition-colors flex items-center justify-between"
                   @click="toggleReferencesPanel"
                 >
-                  <span>参考文献编辑区</span>
+                  <span>参考文献</span>
                   <svg
                     class="w-3 h-3 transition-transform duration-200"
                     :class="{ 'rotate-180': isReferencesExpanded }"

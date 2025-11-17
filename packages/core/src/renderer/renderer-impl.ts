@@ -154,6 +154,8 @@ export function initRenderer(opts: IOpts): RendererAPI {
   const listOrderedStack: boolean[] = []
   const listCounters: number[] = []
   let h2Counter: number = 0
+  let h3Counter: number = 0
+  let h4Counter: number = 0
 
   function getOpts(): IOpts {
     return opts
@@ -185,6 +187,8 @@ export function initRenderer(opts: IOpts): RendererAPI {
     footnotes.length = 0
     footnoteIndex = 0
     h2Counter = 0
+     h3Counter = 0
+     h4Counter = 0
     setOptions(newOpts)
   }
 
@@ -211,7 +215,6 @@ export function initRenderer(opts: IOpts): RendererAPI {
     }
     return `
       <blockquote ${styles(`blockquote`)}>
-        <p ${styles(`blockquote_p`)}>点击<span style="color: #576B95"> 上方蓝字 </span>关注我们，了解更多生涯资讯~</p>
         <p ${styles(`blockquote_p`)}>全文共 ${readingTime?.words} 字，约需 ${Math.ceil(readingTime?.minutes)} 分钟完成阅读。</p>
       </blockquote>
     `
@@ -235,8 +238,26 @@ export function initRenderer(opts: IOpts): RendererAPI {
 
       if (depth === 2) {
         h2Counter++
+        // 每到一个新的二级标题，重置三级、四级计数
+        h3Counter = 0
+        h4Counter = 0
         const prefix = `${String(h2Counter).padStart(2, `0`)}. `
         return styledContent(tag, prefix + text)
+      }
+
+      if (depth === 3) {
+        h3Counter++
+        // 新的三级标题重置四级计数
+        h4Counter = 0
+        const prefix = `（${h3Counter}）`
+        return styledContent(tag, `${prefix} ${text}`)
+      }
+
+      if (depth === 4) {
+        h4Counter++
+        const circledNums = [`①`, `②`, `③`, `④`, `⑤`, `⑥`, `⑦`, `⑧`, `⑨`, `⑩`]
+        const prefix = circledNums[(h4Counter - 1) % circledNums.length]
+        return styledContent(tag, `${prefix} ${text}`)
       }
 
       return styledContent(tag, text)
