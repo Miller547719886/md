@@ -230,7 +230,8 @@ export const legendOptions: IConfigOption[] = [
 ]
 
 export const defaultStyleConfig = {
-  isCiteStatus: false,
+  // 微信外链接底部引用默认启用
+  isCiteStatus: true,
   isMacCodeBlock: true,
   isShowLineNumber: false,
   isCountStatus: true,

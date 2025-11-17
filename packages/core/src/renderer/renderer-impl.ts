@@ -187,8 +187,8 @@ export function initRenderer(opts: IOpts): RendererAPI {
     footnotes.length = 0
     footnoteIndex = 0
     h2Counter = 0
-     h3Counter = 0
-     h4Counter = 0
+    h3Counter = 0
+    h4Counter = 0
     setOptions(newOpts)
   }
 
