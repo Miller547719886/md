@@ -34,9 +34,10 @@ export async function copyPlain(text: string): Promise<void> {
 
 export async function copyHtml(html: string, fallback?: string): Promise<void> {
   const plain = fallback ?? html.replace(/<[^>]+>/g, ``)
-  if (window.isSecureContext && navigator.clipboard?.write) {
+  if (window.isSecureContext && navigator.clipboard?.write && (window as any).ClipboardItem) {
     try {
-      const item = new ClipboardItem({
+      const ClipboardCtor = (window as any).ClipboardItem as typeof ClipboardItem
+      const item = new ClipboardCtor({
         'text/html': new Blob([html], { type: `text/html` }),
         'text/plain': new Blob([plain], { type: `text/plain` }),
       })

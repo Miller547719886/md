@@ -3,6 +3,7 @@ import { getDefaultMpProfile } from '@md/shared/configs'
 import { ChevronDownIcon, Menu, Settings } from 'lucide-vue-next'
 import { useStore } from '@/stores'
 import { addPrefix, processClipboardContent } from '@/utils'
+import { copyHtml } from '@/utils/clipboard'
 import FormatDropdown from './FormatDropdown.vue'
 
 const emit = defineEmits([`startCopy`, `endCopy`])
@@ -99,19 +100,10 @@ async function copy() {
       const temp = clipboardDiv.innerHTML
 
       if (copyMode.value === `txt`) {
-        // execCommand 已废弃，且会丢失 SVG 等复杂内容
+        // 使用统一的 HTML 复制工具，内部已做 Clipboard API 能力检测和降级处理
         try {
           const plainText = clipboardDiv.textContent || ``
-          const clipboardItem = new ClipboardItem({
-            'text/html': new Blob([temp], { type: `text/html` }),
-            'text/plain': new Blob([plainText], { type: `text/plain` }),
-          })
-          // FIX: https://stackoverflow.com/questions/62327358/javascript-clipboard-api-safari-ios-notallowederror-message
-          // NotAllowedError: the request is not allowed by the user agent or the platform in the current context,
-          // possibly because the user denied permission.
-          setTimeout(async () => {
-            await navigator.clipboard.write([clipboardItem])
-          }, 0)
+          await copyHtml(temp, plainText)
         }
         catch (error) {
           toast.error(`复制失败，请联系开发者。${error}`)
