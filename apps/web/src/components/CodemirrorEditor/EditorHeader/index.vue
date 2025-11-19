@@ -1,9 +1,16 @@
 <script setup lang="ts">
 import { getDefaultMpProfile } from '@md/shared/configs'
 import { ChevronDownIcon, Menu, Settings } from 'lucide-vue-next'
+import { h, markRaw, onMounted, onUnmounted, ref } from 'vue'
+import img01 from '@/assets/images/01.png'
+import img02 from '@/assets/images/02.png'
+import img03 from '@/assets/images/03.png'
+import img04 from '@/assets/images/04.png'
+import img05 from '@/assets/images/05.png'
 import { useStore } from '@/stores'
 import { addPrefix, processClipboardContent } from '@/utils'
 import { copyHtml } from '@/utils/clipboard'
+import CopyGuideToast from './CopyGuideToast.vue'
 import FormatDropdown from './FormatDropdown.vue'
 
 const emit = defineEmits([`startCopy`, `endCopy`])
@@ -18,6 +25,10 @@ const { editorRefresh } = store
 const aboutDialogVisible = ref(false)
 const fundDialogVisible = ref(false)
 const editorStateDialogVisible = ref(false)
+const copyGuideDialogVisible = ref(false)
+const copyGuideActiveIndex = ref(0)
+const COPY_GUIDE_TOTAL = 5
+const guideImages = [img01, img02, img03, img04, img05]
 
 // 处理帮助菜单事件
 function handleOpenAbout() {
@@ -31,6 +42,53 @@ function handleOpenFund() {
 function handleOpenEditorState() {
   editorStateDialogVisible.value = true
 }
+
+function openCopyGuideDialog() {
+  copyGuideDialogVisible.value = true
+}
+
+function goNextGuide() {
+  // 最后一张时，点击“完成”关闭弹窗并复位索引
+  if (copyGuideActiveIndex.value === COPY_GUIDE_TOTAL - 1) {
+    copyGuideDialogVisible.value = false
+    copyGuideActiveIndex.value = 0
+    return
+  }
+  copyGuideActiveIndex.value += 1
+}
+
+function goPrevGuide() {
+  copyGuideActiveIndex.value
+    = (copyGuideActiveIndex.value - 1 + COPY_GUIDE_TOTAL) % COPY_GUIDE_TOTAL
+}
+
+function closeCopyGuide() {
+  copyGuideDialogVisible.value = false
+  copyGuideActiveIndex.value = 0
+}
+
+function handleGuideKeydown(e: KeyboardEvent) {
+  if (!copyGuideDialogVisible.value)
+    return
+
+  if (e.key === `Escape`) {
+    closeCopyGuide()
+  }
+  else if (e.key === `ArrowRight`) {
+    goNextGuide()
+  }
+  else if (e.key === `ArrowLeft`) {
+    goPrevGuide()
+  }
+}
+
+onMounted(() => {
+  window.addEventListener(`keydown`, handleGuideKeydown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener(`keydown`, handleGuideKeydown)
+})
 
 const copyMode = useStorage(addPrefix(`copyMode`), `txt`)
 
@@ -67,17 +125,14 @@ async function copy() {
   if (copyMode.value === `md`) {
     const mdContent = editor.value?.getValue() || ``
     await copyContent(mdContent)
-    toast.success(
-      `已复制 Markdown 源码到剪贴板，可直接到公众号后台粘贴。`,
-      {
-        action: {
-          label: `去粘贴`,
-          onClick: () => {
-            window.open(`https://mp.weixin.qq.com/cgi-bin/appmsg`, `_blank`, `noreferrer`)
-          },
-        },
+    toast.custom(() => h(markRaw(CopyGuideToast), {
+      onGoPaste: () => {
+        window.open(`https://mp.weixin.qq.com/cgi-bin/appmsg`, `_blank`, `noreferrer`)
       },
-    )
+      onOpenGuide: () => {
+        openCopyGuideDialog()
+      },
+    }))
     return
   }
 
@@ -120,18 +175,15 @@ async function copy() {
         await copyContent(store.editorContent2HTML())
       }
 
-      // 输出提示：已复制渲染内容，并提供“去粘贴”入口
-      toast.success(
-        `已复制渲染后的内容到剪贴板，可直接到公众号后台粘贴。`,
-        {
-          action: {
-            label: `去粘贴`,
-            onClick: () => {
-              window.open(`https://mp.weixin.qq.com/cgi-bin/appmsg`, `_blank`, `noreferrer`)
-            },
-          },
+      // 输出提示：已复制渲染内容，并提供“去粘贴”和“后续如何操作？”入口
+      toast.custom(() => h(markRaw(CopyGuideToast), {
+        onGoPaste: () => {
+          window.open(`https://mp.weixin.qq.com/cgi-bin/appmsg`, `_blank`, `noreferrer`)
         },
-      )
+        onOpenGuide: () => {
+          openCopyGuideDialog()
+        },
+      }))
       window.dispatchEvent(
         new CustomEvent(`copyToMp`, {
           detail: {
@@ -234,6 +286,60 @@ async function copy() {
   <AboutDialog :visible="aboutDialogVisible" @close="aboutDialogVisible = false" />
   <FundDialog :visible="fundDialogVisible" @close="fundDialogVisible = false" />
   <EditorStateDialog :visible="editorStateDialogVisible" @close="editorStateDialogVisible = false" />
+
+  <!-- 复制后操作引导全屏轮播 -->
+  <div
+    v-if="copyGuideDialogVisible"
+    class="fixed inset-0 z-[10000] flex flex-col bg-black/80"
+  >
+    <button
+      type="button"
+      class="absolute right-6 top-6 rounded-full bg-black/60 px-3 py-1 text-xs text-white hover:bg-black/80"
+      @click="closeCopyGuide"
+    >
+      关闭
+    </button>
+    <div class="flex h-full w-full flex-col items-center justify-center gap-4 px-4 pb-6 pt-8 sm:px-6">
+      <div class="relative h-full max-h-[70vh] w-full max-w-3xl overflow-hidden rounded-md bg-black/40">
+        <div
+          v-for="(src, index) in guideImages"
+          :key="src"
+          class="absolute inset-0 flex items-center justify-center transition-opacity duration-300"
+          :class="copyGuideActiveIndex === index ? 'opacity-100' : 'opacity-0 pointer-events-none'"
+        >
+          <img
+            :src="src"
+            :alt="`引导图片 ${index + 1}`"
+            class="h-full w-full object-contain"
+          >
+        </div>
+      </div>
+      <div class="flex w-full max-w-3xl items-center justify-between text-white">
+        <button
+          type="button"
+          class="rounded border border-white/50 px-3 py-1 text-xs hover:bg-white/10"
+          @click="goPrevGuide"
+        >
+          上一张
+        </button>
+        <div class="flex items-center gap-1">
+          <span
+            v-for="index in COPY_GUIDE_TOTAL"
+            :key="index"
+            class="h-2 w-2 rounded-full"
+            :class="copyGuideActiveIndex === index - 1 ? 'bg-primary' : 'bg-white/40'"
+          />
+        </div>
+        <button
+          type="button"
+          class="rounded border border-white/50 px-3 py-1 text-xs hover:bg-white/10"
+          @click="goNextGuide"
+        >
+          {{ copyGuideActiveIndex === COPY_GUIDE_TOTAL - 1 ? '完成' : '下一张' }}
+        </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <style lang="less" scoped>

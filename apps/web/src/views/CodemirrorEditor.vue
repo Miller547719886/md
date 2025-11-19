@@ -605,20 +605,25 @@ onUnmounted(() => {
                 正文编辑区
               </div>
 
-              <SearchTab v-if="editor" ref="searchTabRef" :editor="editor" />
-              <AIFixedBtn
-                :is-mobile="store.isMobile"
-                :show-editor="showEditor"
-              />
-
-              <EditorContextMenu>
-                <textarea
-                  id="editor"
-                  ref="editorRef"
-                  type="textarea"
-                  placeholder="Your markdown text here."
+              <!-- 正文编辑主区域：占用剩余空间 -->
+              <div class="editor-main relative flex-1 min-h-0">
+                <SearchTab v-if="editor" ref="searchTabRef" :editor="editor" />
+                <AIFixedBtn
+                  :is-mobile="store.isMobile"
+                  :show-editor="showEditor"
                 />
-              </EditorContextMenu>
+
+                <div class="editor-context-wrapper">
+                  <EditorContextMenu>
+                    <textarea
+                      id="editor"
+                      ref="editorRef"
+                      type="textarea"
+                      placeholder="Your markdown text here."
+                    />
+                  </EditorContextMenu>
+                </div>
+              </div>
 
               <!-- 作者&审核编辑区 -->
               <div class="author-review-section border-t bg-muted/20">
@@ -892,6 +897,25 @@ onUnmounted(() => {
   overflow: hidden;
 }
 
+.editor-main {
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-context-wrapper {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+
+  > * {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+}
+
 /* 编辑区标题统一高度 */
 .editor-label,
 .author-review-section > div:first-child,
@@ -939,13 +963,6 @@ onUnmounted(() => {
   height: 100%;
   flex: 1;
   min-height: 0;
-}
-
-/* 确保 EditorContextMenu 容器正确处理高度 */
-.codeMirror-wrapper > * {
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
 }
 
 /* 确保内容区域在收起时不显示 */

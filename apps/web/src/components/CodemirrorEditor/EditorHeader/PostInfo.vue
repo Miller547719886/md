@@ -128,7 +128,7 @@ onBeforeMount(() => {
             v-if="!store.isMobile"
             variant="outline"
             aria-disabled="true"
-            class="cursor-not-allowed opacity-70"
+            class="cursor-not-allowed bg-muted text-muted-foreground opacity-100 border-muted-foreground/40"
             @click.stop
           >
             发布
