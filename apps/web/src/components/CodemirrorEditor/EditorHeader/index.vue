@@ -29,6 +29,8 @@ const copyGuideDialogVisible = ref(false)
 const copyGuideActiveIndex = ref(0)
 const COPY_GUIDE_TOTAL = 5
 const guideImages = [img01, img02, img03, img04, img05]
+const helpVideoVisible = ref(false)
+const helpVideoRef = ref<HTMLVideoElement | null>(null)
 
 // 处理帮助菜单事件
 function handleOpenAbout() {
@@ -68,18 +70,46 @@ function closeCopyGuide() {
 }
 
 function handleGuideKeydown(e: KeyboardEvent) {
+  if (e.key === `Escape`) {
+    if (helpVideoVisible.value) {
+      closeHelpVideo()
+      return
+    }
+
+    closeCopyGuide()
+  }
+
   if (!copyGuideDialogVisible.value)
     return
 
-  if (e.key === `Escape`) {
-    closeCopyGuide()
-  }
-  else if (e.key === `ArrowRight`) {
+  if (e.key === `ArrowRight`) {
     goNextGuide()
   }
   else if (e.key === `ArrowLeft`) {
     goPrevGuide()
   }
+}
+
+function openHelpVideo() {
+  helpVideoVisible.value = true
+  nextTick(() => {
+    if (helpVideoRef.value) {
+      helpVideoRef.value.currentTime = 0
+      helpVideoRef.value.play().catch(() => {})
+    }
+  })
+}
+
+function closeHelpVideo() {
+  if (helpVideoRef.value) {
+    helpVideoRef.value.pause()
+    helpVideoRef.value.currentTime = 0
+  }
+  helpVideoVisible.value = false
+}
+
+function openMarkdownGuide() {
+  window.open(`https://markdown.com.cn/basic-syntax/horizontal-rules.html`, `_blank`, `noreferrer`)
 }
 
 onMounted(() => {
@@ -235,6 +265,24 @@ async function copy() {
 
     <!-- 右侧操作区 -->
     <div class="space-x-2 flex flex-wrap items-center">
+      <!-- 平台使用视频按钮 -->
+      <Button
+        variant="outline"
+        class="text-sm"
+        @click="openHelpVideo"
+      >
+        如何使用本平台?
+      </Button>
+
+      <!-- 学习 Markdown 语法按钮 -->
+      <Button
+        variant="outline"
+        class="text-sm"
+        @click="openMarkdownGuide"
+      >
+        学习 markdown 语法
+      </Button>
+
       <!-- 复制按钮组 -->
       <div
         class="bg-background space-x-1 text-background-foreground flex items-center border rounded-md"
@@ -286,6 +334,29 @@ async function copy() {
   <AboutDialog :visible="aboutDialogVisible" @close="aboutDialogVisible = false" />
   <FundDialog :visible="fundDialogVisible" @close="fundDialogVisible = false" />
   <EditorStateDialog :visible="editorStateDialogVisible" @close="editorStateDialogVisible = false" />
+
+  <!-- 平台使用视频全屏播放器 -->
+  <div
+    v-if="helpVideoVisible"
+    class="fixed inset-0 z-[10000] flex flex-col bg-black/90"
+  >
+    <button
+      type="button"
+      class="absolute right-6 top-6 rounded-full bg-black/60 px-3 py-1 text-xs text-white hover:bg-black/80"
+      @click="closeHelpVideo"
+    >
+      关闭
+    </button>
+    <div class="flex h-full w-full items-center justify-center px-4 pb-6 pt-8 sm:px-6">
+      <video
+        ref="helpVideoRef"
+        class="h-full w-full max-w-4xl max-h-[80vh] rounded-md bg-black object-contain"
+        src="https://tencent-server-cos-1255953774.cos.ap-nanjing.myqcloud.com/ccnu/mp.weixin/mp_wechat_tutorial.mp4"
+        controls
+        autoplay
+      />
+    </div>
+  </div>
 
   <!-- 复制后操作引导全屏轮播 -->
   <div

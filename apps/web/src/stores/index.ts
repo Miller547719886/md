@@ -411,10 +411,10 @@ export const useStore = defineStore(`store`, () => {
       if (!appendContent) {
         appendContent += `\n\n---\n\n`
       }
-      appendContent += `<p style="font-size: 0.875em; padding-top: 1em;"><strong style="color: var(--md-primary-color); font-weight: bold;">参考文献：</strong>`
+      appendContent += `<p style="font-size: 0.875em; padding-top: 1em; word-break: break-all;"><strong style="color: var(--md-primary-color); font-weight: bold;">参考文献：</strong>`
       appendContent += `</p>`
       validReferences.forEach((ref, index) => {
-        appendContent += `<p style="font-size: 0.875em; padding-top: 1em; color: rgba(0,0,0,0.55)">【${index + 1}】${ref.content.trim()}</p>`
+        appendContent += `<p style="font-size: 0.875em; padding-top: 1em; color: rgba(0,0,0,0.55); word-break: break-all;">【${index + 1}】${ref.content.trim()}</p>`
       })
     }
 
