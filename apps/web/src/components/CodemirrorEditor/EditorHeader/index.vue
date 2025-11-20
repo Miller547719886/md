@@ -109,7 +109,7 @@ function closeHelpVideo() {
 }
 
 function openMarkdownGuide() {
-  window.open(`https://markdown.com.cn/basic-syntax/horizontal-rules.html`, `_blank`, `noreferrer`)
+  window.open(`https://markdown.com.cn/basic-syntax/`, `_blank`, `noreferrer`)
 }
 
 onMounted(() => {
