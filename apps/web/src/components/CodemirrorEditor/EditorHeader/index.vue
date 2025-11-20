@@ -280,7 +280,7 @@ async function copy() {
         class="text-sm"
         @click="openMarkdownGuide"
       >
-        学习 markdown 语法
+        5 分钟学会 Markdown 语法
       </Button>
 
       <!-- 复制按钮组 -->
