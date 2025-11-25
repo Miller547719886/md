@@ -80,6 +80,7 @@ function toggleView() {
 // 作者&审核 + 参考文献合并抽屉（默认展开）
 const isMetaExpanded = ref(true)
 const metaContentRef = useTemplateRef<HTMLDivElement>(`metaContentRef`)
+const glossaryListRef = useTemplateRef<HTMLDivElement>(`glossaryListRef`)
 
 // 切换合并抽屉的展开状态
 function toggleMetaPanel() {
@@ -103,6 +104,18 @@ function scrollMetaToBottom() {
   })
 }
 
+// 仅在新增名词解释时滚动到最新一项，避免跳到参考文献区域
+function scrollGlossaryToLast() {
+  nextTick(() => {
+    const list = glossaryListRef.value
+    if (!list)
+      return
+
+    const lastItem = list.lastElementChild as HTMLElement | null
+    lastItem?.scrollIntoView({ block: `start`, behavior: `smooth` })
+  })
+}
+
 // 添加名词解释项
 function addGlossary() {
   glossaryEntries.value.push({
@@ -110,7 +123,7 @@ function addGlossary() {
     label: ``,
     value: ``,
   })
-  scrollMetaToBottom()
+  scrollGlossaryToLast()
 }
 
 function removeGlossary(index: number) {
@@ -676,40 +689,42 @@ onUnmounted(() => {
                       </button>
                     </div>
 
-                    <div
-                      v-for="(item, index) in glossaryEntries"
-                      :key="item.id"
-                      class="flex flex-col gap-2"
-                    >
-                      <div class="grid grid-cols-[10rem_1fr_auto] gap-2 items-center text-xs text-muted-foreground w-full">
-                        <label class="whitespace-nowrap">名词 [{{ index + 1 }}]</label>
-                        <label class="whitespace-nowrap">释义</label>
-                        <span />
-                      </div>
+                    <div ref="glossaryListRef" class="space-y-3">
+                      <div
+                        v-for="(item, index) in glossaryEntries"
+                        :key="item.id"
+                        class="flex flex-col gap-2"
+                      >
+                        <div class="grid grid-cols-[10rem_1fr_auto] gap-2 items-center text-xs text-muted-foreground w-full">
+                          <label class="whitespace-nowrap">名词 [{{ index + 1 }}]</label>
+                          <label class="whitespace-nowrap">释义</label>
+                          <span />
+                        </div>
 
-                      <div class="grid grid-cols-[10rem_1fr_auto] gap-2 w-full">
-                        <input
-                          v-model="item.label"
-                          type="text"
-                          placeholder="请输入名词"
-                          class="w-full px-2 h-8 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary/50 bg-background"
-                        >
-                        <textarea
-                          v-model="item.value"
-                          rows="4"
-                          placeholder="请输入对应的释义"
-                          class="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary/50 bg-background resize-none"
-                        />
-                        <button
-                          v-if="glossaryEntries.length > 1"
-                          class="p-0.5 text-red-500 hover:bg-red-50 rounded transition-colors self-start"
-                          title="删除此项"
-                          @click="removeGlossary(index)"
-                        >
-                          <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
+                        <div class="grid grid-cols-[10rem_1fr_auto] gap-2 w-full">
+                          <input
+                            v-model="item.label"
+                            type="text"
+                            placeholder="请输入名词"
+                            class="w-full px-2 h-8 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary/50 bg-background"
+                          >
+                          <textarea
+                            v-model="item.value"
+                            rows="4"
+                            placeholder="请输入对应的释义"
+                            class="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary/50 bg-background resize-none"
+                          />
+                          <button
+                            v-if="glossaryEntries.length > 1"
+                            class="p-0.5 text-red-500 hover:bg-red-50 rounded transition-colors self-start"
+                            title="删除此项"
+                            @click="removeGlossary(index)"
+                          >
+                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
