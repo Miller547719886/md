@@ -367,7 +367,10 @@ export const useStore = defineStore(`store`, () => {
     level: number
   }[]>([])
 
-  // 作者和审核信息
+  // 名词解释与作者审核信息
+  const glossaryEntries = ref<{ id: number, label: string, value: string }[]>([
+    { id: Date.now(), label: ``, value: `` },
+  ])
   const authorName = ref(``)
   const reviewerName = ref(``)
 
@@ -394,11 +397,21 @@ export const useStore = defineStore(`store`, () => {
     // 添加作者、审核和参考文献信息到文章末尾
     let appendContent = ``
 
-    // 添加作者和审核信息
-    if (authorName.value || reviewerName.value) {
+    // 添加名词解释、作者和审核信息
+    const validGlossaries = glossaryEntries.value.filter(item => item.label.trim() !== `` || item.value.trim() !== ``)
+    if (validGlossaries.length > 0 || authorName.value || reviewerName.value) {
       appendContent += `\n\n---\n\n`
+      if (validGlossaries.length > 0) {
+        appendContent += `<p style="font-size: 0.875em; color: rgba(0,0,0,0.55)"><strong style="color: var(--md-primary-color); font-weight: bold;">名词解释：</strong></p>`
+        validGlossaries.forEach((item, idx) => {
+          const label = item.label.trim()
+          const value = item.value.trim()
+          appendContent += `<p style="font-size: 0.875em; padding-top: 1em; color: rgba(0,0,0,0.55); word-break: break-all;">【${idx + 1}】${label ? `${label}：` : ``}${value}</p>`
+        })
+      }
       if (authorName.value) {
-        appendContent += `<p style="font-size: 0.875em; color: rgba(0,0,0,0.55)"><strong style="color: var(--md-primary-color); font-weight: bold;">作者：</strong> ${authorName.value}</p>\n\n`
+        const authorPadding = validGlossaries.length > 0 ? `padding-top: 1em; ` : ``
+        appendContent += `<p style="${authorPadding}font-size: 0.875em; color: rgba(0,0,0,0.55)"><strong style="color: var(--md-primary-color); font-weight: bold;">作者：</strong> ${authorName.value}</p>\n\n`
       }
       if (reviewerName.value) {
         appendContent += `<p style="font-size: 0.875em; padding-top: 1em; color: rgba(0,0,0,0.55)"><strong style="color: var(--md-primary-color); font-weight: bold;">审核：</strong> ${reviewerName.value}</p>\n\n`
@@ -767,6 +780,7 @@ export const useStore = defineStore(`store`, () => {
 
     editorRefresh,
 
+    glossaryEntries,
     authorName,
     reviewerName,
     references,

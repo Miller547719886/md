@@ -23,7 +23,7 @@ import { fileUpload } from '@/utils/file'
 const store = useStore()
 const displayStore = useDisplayStore()
 
-const { isDark, output, editor, authorName, reviewerName, references } = storeToRefs(store)
+const { isDark, output, editor, glossaryEntries, authorName, reviewerName, references } = storeToRefs(store)
 const { editorRefresh } = store
 
 const { toggleShowUploadImgDialog } = displayStore
@@ -77,26 +77,44 @@ function toggleView() {
   showEditor.value = !showEditor.value
 }
 
-// 作者&审核编辑区相关状态（默认展开）
-const isAuthorReviewExpanded = ref(true)
+// 作者&审核 + 参考文献合并抽屉（默认展开）
+const isMetaExpanded = ref(true)
+const metaContentRef = useTemplateRef<HTMLDivElement>(`metaContentRef`)
 
-// 切换作者&审核面板展开状态
-function toggleAuthorReviewPanel() {
-  isAuthorReviewExpanded.value = !isAuthorReviewExpanded.value
+// 切换合并抽屉的展开状态
+function toggleMetaPanel() {
+  isMetaExpanded.value = !isMetaExpanded.value
   nextTick(() => {
     updateEditorSectionsHeight()
   })
 }
 
-// 参考文献编辑区相关状态（默认展开）
-const isReferencesExpanded = ref(true)
-
-// 切换参考文献面板展开状态
-function toggleReferencesPanel() {
-  isReferencesExpanded.value = !isReferencesExpanded.value
+// 添加名词解释/参考文献项后滚动到底部
+function scrollMetaToBottom() {
   nextTick(() => {
-    updateEditorSectionsHeight()
+    const container = metaContentRef.value
+    if (!container)
+      return
+
+    container.scrollTo({
+      top: container.scrollHeight,
+      behavior: `smooth`,
+    })
   })
+}
+
+// 添加名词解释项
+function addGlossary() {
+  glossaryEntries.value.push({
+    id: Date.now(),
+    label: ``,
+    value: ``,
+  })
+  scrollMetaToBottom()
+}
+
+function removeGlossary(index: number) {
+  glossaryEntries.value.splice(index, 1)
 }
 
 // 添加参考文献项
@@ -105,6 +123,7 @@ function addReference() {
     id: Date.now(),
     content: ``,
   })
+  scrollMetaToBottom()
 }
 
 // 删除参考文献项
@@ -115,23 +134,19 @@ function removeReference(index: number) {
 // 动态计算编辑区高度
 function updateEditorSectionsHeight() {
   const titleHeight = 32 // 每个标题的固定高度
-  const authorReviewHeight = isAuthorReviewExpanded.value ? 120 : 0
-  const referencesHeight = isReferencesExpanded.value ? 180 : 0
+  const metaContentHeight = isMetaExpanded.value ? 300 : 0 // 最高 300px，超出滚动
 
-  // 展开内容的总高度（只有作者&审核和参考文献有可展开内容）
-  const totalContentHeight = authorReviewHeight + referencesHeight
-  // 非正文编辑区域的总高度（两个可收起编辑区的标题 + 内容）
-  const sectionsHeight = (titleHeight * 2) + totalContentHeight
+  // 非正文编辑区域的总高度（合并抽屉标题 + 展开内容）
+  const sectionsHeight = titleHeight + metaContentHeight
 
   // 设置CSS变量
   const root = document.documentElement
   root.style.setProperty(`--editor-sections-height`, `${sectionsHeight}px`)
-  root.style.setProperty(`--author-review-height`, `${authorReviewHeight}px`)
-  root.style.setProperty(`--references-height`, `${referencesHeight}px`)
+  root.style.setProperty(`--meta-section-height`, `${metaContentHeight}px`)
 }
 
 // 监听展开状态变化
-watch([isAuthorReviewExpanded, isReferencesExpanded], () => {
+watch(isMetaExpanded, () => {
   updateEditorSectionsHeight()
 })
 
@@ -140,8 +155,8 @@ onMounted(() => {
   updateEditorSectionsHeight()
 })
 
-// 监听作者、审核和参考文献信息变化，触发编辑器刷新
-watch([authorName, reviewerName, () => references.value.map(r => r.content)], () => {
+// 监听名词解释、作者、审核和参考文献信息变化，触发编辑器刷新
+watch([() => glossaryEntries.value.map(r => `${r.label}|${r.value}`), authorName, reviewerName, () => references.value.map(r => r.content)], () => {
   // 延迟执行避免频繁更新
   setTimeout(() => {
     editorRefresh()
@@ -625,16 +640,16 @@ onUnmounted(() => {
                 </div>
               </div>
 
-              <!-- 作者&审核编辑区 -->
-              <div class="author-review-section border-t bg-muted/20">
+              <!-- 作者&审核 + 参考文献合并抽屉 -->
+              <div class="meta-section border-t bg-muted/20">
                 <div
                   class="cursor-pointer px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted/40 transition-colors flex items-center justify-between"
-                  @click="toggleAuthorReviewPanel"
+                  @click="toggleMetaPanel"
                 >
-                  <span>作者&审核</span>
+                  <span>附录</span>
                   <svg
                     class="w-3 h-3 transition-transform duration-200"
-                    :class="{ 'rotate-180': isAuthorReviewExpanded }"
+                    :class="{ 'rotate-180': isMetaExpanded }"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -643,85 +658,119 @@ onUnmounted(() => {
                   </svg>
                 </div>
                 <div
-                  v-show="isAuthorReviewExpanded"
-                  class="author-review-content px-3 pb-3 pt-2 space-y-2"
+                  v-show="isMetaExpanded"
+                  ref="metaContentRef"
+                  class="meta-content px-3 pb-3 pt-2 space-y-3"
                 >
-                  <div class="flex flex-col space-y-1">
-                    <label class="text-xs text-muted-foreground">作者</label>
-                    <input
-                      v-model="authorName"
-                      type="text"
-                      placeholder="请输入作者姓名"
-                      class="px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary/50 bg-background"
-                    >
-                  </div>
-                  <div class="flex flex-col space-y-1">
-                    <label class="text-xs text-muted-foreground">审核</label>
-                    <input
-                      v-model="reviewerName"
-                      type="text"
-                      placeholder="请输入审核人姓名"
-                      class="px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary/50 bg-background"
-                    >
-                  </div>
-                </div>
-              </div>
-
-              <!-- 参考文献编辑区 -->
-              <div class="references-section border-t bg-muted/20">
-                <div
-                  class="cursor-pointer px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted/40 transition-colors flex items-center justify-between"
-                  @click="toggleReferencesPanel"
-                >
-                  <span>参考文献</span>
-                  <svg
-                    class="w-3 h-3 transition-transform duration-200"
-                    :class="{ 'rotate-180': isReferencesExpanded }"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                  </svg>
-                </div>
-                <div
-                  v-show="isReferencesExpanded"
-                  class="references-content px-3 pb-3 pt-2 space-y-2"
-                >
-                  <div
-                    v-for="(reference, index) in references"
-                    :key="reference.id"
-                    class="flex items-start space-x-1"
-                  >
-                    <div class="flex-1">
-                      <label class="text-xs text-muted-foreground">参考文献 [{{ index + 1 }}]</label>
-                      <textarea
-                        v-model="reference.content"
-                        placeholder="请输入参考文献内容"
-                        class="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary/50 bg-background resize-none"
-                        rows="2"
-                      />
+                  <div class="space-y-2">
+                    <div class="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>名词解释</span>
+                      <button
+                        class="flex items-center space-x-1 px-2 py-1 text-xs text-primary border border-primary/30 rounded hover:bg-primary/10 transition-colors"
+                        @click="addGlossary"
+                      >
+                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        <span>添加</span>
+                      </button>
                     </div>
-                    <button
-                      v-if="references.length > 1"
-                      class="mt-4 p-0.5 text-red-500 hover:bg-red-50 rounded transition-colors"
-                      title="删除此项"
-                      @click="removeReference(index)"
+
+                    <div
+                      v-for="(item, index) in glossaryEntries"
+                      :key="item.id"
+                      class="flex flex-col gap-2"
                     >
-                      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
+                      <div class="flex items-start gap-2 w-full">
+                        <label class="text-xs text-muted-foreground whitespace-nowrap pt-2">名词 [{{ index + 1 }}]</label>
+                        <input
+                          v-model="item.label"
+                          type="text"
+                          placeholder="请输入名词"
+                          class="w-40 px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary/50 bg-background"
+                        >
+                        <label class="text-xs text-muted-foreground whitespace-nowrap pt-2">释义</label>
+                        <textarea
+                          v-model="item.value"
+                          rows="4"
+                          placeholder="请输入对应的释义"
+                          class="flex-1 px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary/50 bg-background resize-none"
+                        />
+                        <button
+                          v-if="glossaryEntries.length > 1"
+                          class="p-0.5 text-red-500 hover:bg-red-50 rounded transition-colors self-start"
+                          title="删除此项"
+                          @click="removeGlossary(index)"
+                        >
+                          <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <button
-                    class="flex items-center space-x-1 px-2 py-1 text-xs text-primary border border-primary/30 rounded hover:bg-primary/10 transition-colors"
-                    @click="addReference"
-                  >
-                    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    <span>添加参考文献</span>
-                  </button>
+
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <div class="flex flex-col space-y-1">
+                      <label class="text-xs text-muted-foreground">作者</label>
+                      <input
+                        v-model="authorName"
+                        type="text"
+                        placeholder="请输入作者姓名"
+                        class="px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary/50 bg-background"
+                      >
+                    </div>
+                    <div class="flex flex-col space-y-1">
+                      <label class="text-xs text-muted-foreground">审核</label>
+                      <input
+                        v-model="reviewerName"
+                        type="text"
+                        placeholder="请输入审核人姓名"
+                        class="px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary/50 bg-background"
+                      >
+                    </div>
+                  </div>
+
+                  <div class="space-y-2">
+                    <div class="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>参考文献</span>
+                      <button
+                        class="flex items-center space-x-1 px-2 py-1 text-xs text-primary border border-primary/30 rounded hover:bg-primary/10 transition-colors"
+                        @click="addReference"
+                      >
+                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        <span>添加</span>
+                      </button>
+                    </div>
+
+                    <div
+                      v-for="(reference, index) in references"
+                      :key="reference.id"
+                      class="flex items-start space-x-1"
+                    >
+                      <div class="flex-1">
+                        <label class="text-xs text-muted-foreground">参考文献 [{{ index + 1 }}]</label>
+                        <textarea
+                          v-model="reference.content"
+                          placeholder="请输入参考文献内容"
+                          class="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary/50 bg-background resize-none"
+                          rows="2"
+                        />
+                      </div>
+                      <button
+                        v-if="references.length > 1"
+                        class="mt-4 p-0.5 text-red-500 hover:bg-red-50 rounded transition-colors"
+                        title="删除此项"
+                        @click="removeReference(index)"
+                      >
+                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -918,44 +967,22 @@ onUnmounted(() => {
 
 /* 编辑区标题统一高度 */
 .editor-label,
-.author-review-section > div:first-child,
-.references-section > div:first-child {
+.meta-section > div:first-child {
   height: 32px;
   min-height: 32px;
   display: flex;
   flex-shrink: 0;
 }
 
-/* 作者&审核编辑区 */
-.author-review-section {
+/* 作者&审核 + 参考文献合并抽屉 */
+.meta-section {
   flex-shrink: 0;
 }
 
-.author-review-content {
-  height: var(--author-review-height);
+.meta-content {
+  height: var(--meta-section-height);
+  max-height: 250px;
   overflow-y: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.author-review-content::-webkit-scrollbar {
-  display: none;
-}
-
-/* 参考文献编辑区 */
-.references-section {
-  flex-shrink: 0;
-}
-
-.references-content {
-  height: var(--references-height);
-  overflow-y: auto;
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-
-.references-content::-webkit-scrollbar {
-  display: none;
 }
 
 /* CodeMirror 编辑器占用剩余空间 */
@@ -966,8 +993,7 @@ onUnmounted(() => {
 }
 
 /* 确保内容区域在收起时不显示 */
-.author-review-content,
-.references-content {
+.meta-content {
   transition: height 0.2s ease;
 }
 </style>
