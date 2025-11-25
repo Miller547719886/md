@@ -113,13 +113,13 @@ export function createExtraKeys(openSearchWithSelection: (cm: CodeMirror.Editor)
       })
     },
 
-    [`${ctrlKey}-D`]: function del(editor) {
-      toggleFormat(editor, {
-        prefix: `~~`,
-        suffix: `~~`,
-        check: s => s.startsWith(`~~`) && s.endsWith(`~~`),
-      })
-    },
+    // [`${ctrlKey}-D`]: function del(editor) {
+    //   toggleFormat(editor, {
+    //     prefix: `~~`,
+    //     suffix: `~~`,
+    //     check: s => s.startsWith(`~~`) && s.endsWith(`~~`),
+    //   })
+    // },
 
     [`${ctrlKey}-K`]: function link(editor) {
       toggleFormat(editor, {

@@ -40,11 +40,11 @@ const formatItems = [
     kbd: [ctrlSign, `I`],
     cmd: `${ctrlKey}-I`,
   },
-  {
-    label: `删除线`,
-    kbd: [ctrlSign, `D`],
-    cmd: `${ctrlKey}-D`,
-  },
+  // { // 暂停删除线功能
+  //   label: `删除线`,
+  //   kbd: [ctrlSign, `D`],
+  //   cmd: `${ctrlKey}-D`,
+  // },
   {
     label: `超链接`,
     kbd: [ctrlSign, `K`],
