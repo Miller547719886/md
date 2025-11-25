@@ -6,6 +6,73 @@ import { format } from 'prettier/standalone'
 import { addSpacingToMarkdown } from './autoSpace'
 
 /**
+ * 为自然段之间自动补充空行，使 Markdown 渲染为独立段落
+ * - 跳过代码块、列表、标题等结构，避免破坏语义
+ */
+function addBlankLineBetweenParagraphs(content: string): string {
+  const lines = content.split(/\r?\n/)
+  const result: string[] = []
+
+  let inFence = false
+
+  const isParagraphLine = (line: string) => {
+    if (!line)
+      return false
+
+    const trimmed = line.trimStart()
+
+    // 跳过标题、列表、引用、表格、HR、HTML、缩进代码
+    if (/^#{1,6}\s/.test(trimmed))
+      return false
+    if (/^[\-*+]\s+/.test(trimmed))
+      return false
+    if (/^\d+\.\s+/.test(trimmed))
+      return false
+    if (/^>\s?/.test(trimmed))
+      return false
+    if (/^\|/.test(trimmed))
+      return false
+    if (/^(?:---|\*\*\*|___)$/.test(trimmed))
+      return false
+    if (/^<\/?[a-z]/i.test(trimmed))
+      return false
+    if (/^\s{4,}/.test(line))
+      return false
+
+    return true
+  }
+
+  lines.forEach((line, index) => {
+    const trimmed = line.trim()
+    const isFence = /^```|^~~~/.test(trimmed)
+
+    result.push(line)
+
+    if (isFence)
+      inFence = !inFence
+
+    if (inFence)
+      return
+
+    if (trimmed === ``)
+      return
+
+    const nextLine = lines[index + 1]
+    if (nextLine === undefined)
+      return
+
+    const nextTrimmed = nextLine.trim()
+    if (nextTrimmed === ``)
+      return
+
+    if (isParagraphLine(trimmed) && isParagraphLine(nextTrimmed))
+      result.push(``)
+  })
+
+  return result.join(`\n`)
+}
+
+/**
  * 通用文件下载函数
  * @param content - 文件内容
  * @param filename - 文件名
@@ -95,7 +162,10 @@ export async function formatDoc(content: string, type: `markdown` | `css` = `mar
     markdown: [prettierPluginMarkdown, prettierPluginBabel, prettierPluginEstree],
     css: [prettierPluginCss],
   }
-  const addSpaceContent = await addSpacingToMarkdown(content)
+
+  // 先为自然段插入空行，保证格式化后段落分隔清晰
+  const contentWithParagraphBreak = addBlankLineBetweenParagraphs(content)
+  const addSpaceContent = await addSpacingToMarkdown(contentWithParagraphBreak)
 
   const parser = type in plugins ? type : `markdown`
   return await format(addSpaceContent, {

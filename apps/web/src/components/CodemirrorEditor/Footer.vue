@@ -6,14 +6,14 @@ const store = useStore()
 const { readingTime } = storeToRefs(store)
 
 const tips = [
-  `Ctrl+B 加粗`,
-  `Ctrl+I 斜体`,
-  `Ctrl+K 插入链接`,
-  `Ctrl+E 行内代码`,
-  `Ctrl+H 标题级别`,
-  `Ctrl+U 无序列表`,
-  `Ctrl+O 有序列表`,
-  `Alt+Shift+F 一键格式化`,
+  `ctrl+b（windows）/ cmd+b（macOS） 强调`,
+  `ctrl+i（windows）/ cmd+i（macOS） 斜体`,
+  `ctrl+k（windows）/ cmd+k（macOS） 插入链接`,
+  `ctrl+e（windows）/ cmd+e（macOS） 行内标签`,
+  `ctrl+h（windows）/ cmd+h（macOS） 标题级别`,
+  `ctrl+u（windows）/ cmd+u（macOS） 无序列表`,
+  `ctrl+o（windows）/ cmd+o（macOS） 有序列表`,
+  `alt+shift+f 一键格式化`,
 ]
 
 const tipsText = computed(() => tips.join(` ｜ `))
