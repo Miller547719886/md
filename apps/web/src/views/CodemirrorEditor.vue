@@ -681,15 +681,15 @@ onUnmounted(() => {
                       :key="item.id"
                       class="flex flex-col gap-2"
                     >
-                      <div class="flex items-start gap-2 w-full">
-                        <label class="text-xs text-muted-foreground whitespace-nowrap pt-2">名词 [{{ index + 1 }}]</label>
+                      <div class="flex items-center gap-2 w-full">
+                        <label class="text-xs text-muted-foreground whitespace-nowrap">名词 [{{ index + 1 }}]</label>
                         <input
                           v-model="item.label"
                           type="text"
                           placeholder="请输入名词"
                           class="w-40 px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary/50 bg-background"
                         >
-                        <label class="text-xs text-muted-foreground whitespace-nowrap pt-2">释义</label>
+                        <label class="text-xs text-muted-foreground whitespace-nowrap">释义</label>
                         <textarea
                           v-model="item.value"
                           rows="4"
