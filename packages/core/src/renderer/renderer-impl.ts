@@ -360,8 +360,8 @@ export function initRenderer(opts: IOpts): RendererAPI {
       listCounters[listCounters.length - 1] = idx + 1
 
       const prefix = ordered
-        ? `${idx}. `
-        : `• `
+        ? `<span class="list-marker" style="color: var(--md-primary-color);">${idx}.</span> `
+        : `<span class="list-marker" style="color: var(--md-primary-color);">•</span> `
 
       // 渲染内容：优先 inline，fallback 去掉 <p> 包裹
       let content: string

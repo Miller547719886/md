@@ -681,20 +681,24 @@ onUnmounted(() => {
                       :key="item.id"
                       class="flex flex-col gap-2"
                     >
-                      <div class="flex items-center gap-2 w-full">
-                        <label class="text-xs text-muted-foreground whitespace-nowrap">名词 [{{ index + 1 }}]</label>
+                      <div class="grid grid-cols-[10rem_1fr_auto] gap-2 items-center text-xs text-muted-foreground w-full">
+                        <label class="whitespace-nowrap">名词 [{{ index + 1 }}]</label>
+                        <label class="whitespace-nowrap">释义</label>
+                        <span />
+                      </div>
+
+                      <div class="grid grid-cols-[10rem_1fr_auto] gap-2 w-full">
                         <input
                           v-model="item.label"
                           type="text"
                           placeholder="请输入名词"
-                          class="w-40 px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary/50 bg-background"
+                          class="w-full px-2 h-8 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary/50 bg-background"
                         >
-                        <label class="text-xs text-muted-foreground whitespace-nowrap">释义</label>
                         <textarea
                           v-model="item.value"
                           rows="4"
                           placeholder="请输入对应的释义"
-                          class="flex-1 px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary/50 bg-background resize-none"
+                          class="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary/50 bg-background resize-none"
                         />
                         <button
                           v-if="glossaryEntries.length > 1"
