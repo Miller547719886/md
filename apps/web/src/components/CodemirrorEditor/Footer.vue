@@ -75,6 +75,10 @@ onBeforeUnmount(() => {
     class="flex select-none items-center justify-between px-5 py-2 text-xs gap-4"
   >
     <div class="flex-1" />
+    <div class="text-muted-foreground text-xs whitespace-nowrap">
+      使用快捷键，写作效率更高 ^w^
+    </div>
+
     <div
       ref="marqueeWrapRef"
       class="tips-marquee flex-1 text-center text-muted-foreground overflow-hidden whitespace-nowrap"
