@@ -1,22 +1,20 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useStore } from '@/stores'
 
 const store = useStore()
 const { readingTime } = storeToRefs(store)
 
 const tips = [
-  `ctrl+b（windows）/ cmd+b（macOS） 强调`,
-  `ctrl+i（windows）/ cmd+i（macOS） 斜体`,
-  `ctrl+k（windows）/ cmd+k（macOS） 插入链接`,
-  `ctrl+e（windows）/ cmd+e（macOS） 行内标签`,
-  `ctrl+h（windows）/ cmd+h（macOS） 标题级别`,
-  `ctrl+u（windows）/ cmd+u（macOS） 无序列表`,
-  `ctrl+o（windows）/ cmd+o（macOS） 有序列表`,
+  `强调：ctrl+b（windows）/ cmd+b（macOS）`,
+  `斜体：ctrl+i（windows）/ cmd+i（macOS）`,
+  `插入链接：ctrl+k（windows）/ cmd+k（macOS）`,
+  `行内标签：ctrl+e（windows）/ cmd+e（macOS）`,
+  `标题级别：ctrl+h（windows）/ cmd+h（macOS）`,
+  `无序列表：ctrl+u（windows）/ cmd+u（macOS）`,
+  `有序列表：ctrl+o（windows）/ cmd+o（macOS）`,
   `alt+shift+f 一键格式化`,
 ]
-
-const tipsText = computed(() => tips.join(` ｜ `))
 
 const marqueeWrapRef = ref<HTMLElement>()
 const marqueeTrackRef = ref<HTMLElement>()
@@ -83,7 +81,12 @@ onBeforeUnmount(() => {
       ref="marqueeWrapRef"
       class="tips-marquee flex-1 text-center text-muted-foreground overflow-hidden whitespace-nowrap"
     >
-      <span ref="marqueeTrackRef" class="tips-track">{{ tipsText }}</span>
+      <span ref="marqueeTrackRef" class="tips-track">
+        <template v-for="(tip, index) in tips" :key="`${tip}-${index}`">
+          <span class="tip-item">{{ tip }}</span>
+          <span v-if="index !== tips.length - 1" class="tip-separator">｜</span>
+        </template>
+      </span>
     </div>
     <div class="flex-1 text-right space-x-2">
       <span> {{ readingTime.words }} 个词 </span>
@@ -101,5 +104,16 @@ onBeforeUnmount(() => {
 .tips-track {
   display: inline-block;
   will-change: transform;
+}
+
+.tip-item {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.tip-separator {
+  margin: 0 8px;
+  opacity: 0.65;
 }
 </style>
