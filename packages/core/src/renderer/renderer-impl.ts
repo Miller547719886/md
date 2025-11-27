@@ -359,9 +359,10 @@ export function initRenderer(opts: IOpts): RendererAPI {
       // 准备下一个
       listCounters[listCounters.length - 1] = idx + 1
 
+      // 使用纯文本前缀以避免复制到公众号时出现断行问题
       const prefix = ordered
-        ? `<span class="list-marker" style="color: var(--md-primary-color);">${idx}.</span> `
-        : `<span class="list-marker" style="color: var(--md-primary-color);">•</span> `
+        ? `${idx}. `
+        : `• `
 
       // 渲染内容：优先 inline，fallback 去掉 <p> 包裹
       let content: string
