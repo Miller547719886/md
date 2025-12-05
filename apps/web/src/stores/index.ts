@@ -367,10 +367,9 @@ export const useStore = defineStore(`store`, () => {
     level: number
   }[]>([])
 
-  // 名词解释与作者审核信息
-  const glossaryEntries = ref<{ id: number, label: string, value: string }[]>([
-    { id: Date.now(), label: ``, value: `` },
-  ])
+  // 名词解释（由正文内“专有名词”片段/行内代码自动解析生成，不支持手动增删）
+  const glossaryEntries = ref<{ id: number, label: string, value: string }[]>([])
+  const syncingGlossary = ref(false)
   const authorName = ref(``)
   const reviewerName = ref(``)
 
@@ -378,6 +377,28 @@ export const useStore = defineStore(`store`, () => {
   const references = ref<{ id: number, content: string }[]>([
     { id: Date.now(), content: `` },
   ])
+
+  // 从正文中提取“专有名词”（行内代码）作为名词解释来源（去重，按出现顺序）
+  const extractGlossariesFromRaw = (raw: string, prev: { id: number, label: string, value: string }[]) => {
+    const results: { id: number, label: string, value: string }[] = []
+    const seen = new Set<string>()
+    const prevMap = new Map(prev.map(item => [item.label, item]))
+    const regex = /`([^`]+)`/g
+    let match: RegExpExecArray | null
+    // eslint 不允许在 while 条件里赋值，这里改为显式循环以保持逻辑清晰
+    for (;;) {
+      match = regex.exec(raw)
+      if (!match)
+        break
+      const term = match[1].trim()
+      if (!term || seen.has(term))
+        continue
+      seen.add(term)
+      const prevItem = prevMap.get(term)
+      results.push({ id: Date.now() + results.length, label: term, value: prevItem?.value ?? `` })
+    }
+    return results
+  }
 
   // 更新编辑器
   const editorRefresh = () => {
@@ -394,11 +415,19 @@ export const useStore = defineStore(`store`, () => {
 
     const raw = editor.value!.getValue()
 
+    // 根据正文“专有名词”生成名词解释列表
+    const derivedGlossaries = extractGlossariesFromRaw(raw, glossaryEntries.value)
+    syncingGlossary.value = true
+    glossaryEntries.value = derivedGlossaries
+    nextTick(() => {
+      syncingGlossary.value = false
+    })
+
     // 添加作者、审核和参考文献信息到文章末尾
     let appendContent = ``
 
     // 添加名词解释、作者和审核信息
-    const validGlossaries = glossaryEntries.value.filter(item => item.label.trim() !== `` || item.value.trim() !== ``)
+    const validGlossaries = derivedGlossaries
     if (validGlossaries.length > 0 || authorName.value || reviewerName.value) {
       appendContent += `\n\n---\n\n`
       if (validGlossaries.length > 0) {

@@ -51,7 +51,7 @@ const formatItems = [
     cmd: `${ctrlKey}-K`,
   },
   {
-    label: `行内代码`,
+    label: `专有名词`,
     kbd: [ctrlSign, `E`],
     cmd: `${ctrlKey}-E`,
   },

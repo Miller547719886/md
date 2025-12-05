@@ -16,7 +16,7 @@ function onOpenOption() {
       <img style="height: 40px" :src="logo">
       <span
         style="
-          font-size: 16px;
+          font-size: 14px;
           line-height: 40px;
           font-weight: bold;
           margin-left: 8px;

@@ -9,7 +9,7 @@ const tips = [
   `强调：ctrl+b（windows）/ cmd+b（macOS）`,
   `斜体：ctrl+i（windows）/ cmd+i（macOS）`,
   `插入链接：ctrl+k（windows）/ cmd+k（macOS）`,
-  `行内标签：ctrl+e（windows）/ cmd+e（macOS）`,
+  `专有名词：ctrl+e（windows）/ cmd+e（macOS）`,
   `标题级别：ctrl+h（windows）/ cmd+h（macOS）`,
   `无序列表：ctrl+u（windows）/ cmd+u（macOS）`,
   `有序列表：ctrl+o（windows）/ cmd+o（macOS）`,

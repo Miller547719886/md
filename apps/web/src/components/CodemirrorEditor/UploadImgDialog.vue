@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { toTypedSchema } from '@vee-validate/yup'
-import { UploadCloud } from 'lucide-vue-next'
+import { Check, UploadCloud } from 'lucide-vue-next'
+import { CheckboxIndicator, CheckboxRoot } from 'radix-vue'
 import { Field, Form } from 'vee-validate'
 import * as yup from 'yup'
 import { useDisplayStore } from '@/stores'
@@ -66,16 +67,20 @@ const txCOSSchema = toTypedSchema(yup.object({
   path: yup.string().optional(),
 }))
 
-const txCOSConfig = ref(localStorage.getItem(`txCOSConfig`)
-  ? JSON.parse(localStorage.getItem(`txCOSConfig`)!)
-  : {
-      secretId: ``,
-      secretKey: ``,
-      bucket: ``,
-      region: ``,
-      cdnHost: ``,
-      path: ``,
-    })
+// 私有化部署默认配置，默认从环境变量注入，避免凭证写入仓库
+const defaultTxCOSConfig = {
+  secretId: import.meta.env.VITE_TXCOS_SECRET_ID || ``,
+  secretKey: import.meta.env.VITE_TXCOS_SECRET_KEY || ``,
+  bucket: import.meta.env.VITE_TXCOS_BUCKET || ``,
+  region: import.meta.env.VITE_TXCOS_REGION || ``,
+  cdnHost: import.meta.env.VITE_TXCOS_CDN_HOST || ``,
+  path: import.meta.env.VITE_TXCOS_PATH || ``,
+}
+
+const storedTxCOSConfig = localStorage.getItem(`txCOSConfig`)
+const txCOSConfig = ref(storedTxCOSConfig
+  ? JSON.parse(storedTxCOSConfig)
+  : defaultTxCOSConfig)
 
 function txCOSSubmit(formValues: any) {
   localStorage.setItem(`txCOSConfig`, JSON.stringify(formValues))
@@ -344,11 +349,30 @@ const options = [
   },
 ]
 
-const imgHost = ref(`default`)
+const imgHost = ref(`txCOS`)
 const useCompression = ref(false)
 const activeName = ref(`upload`)
+const imageTitle = ref(``)
+const appendRemovalNote = ref(false)
+const finalTitle = computed(() => {
+  const base = imageTitle.value.trim()
+  const suffix = appendRemovalNote.value ? `（图源网络，侵删）` : ``
+  if (!base && !suffix)
+    return ``
+  return `${base}${suffix}`
+})
 
 onBeforeMount(() => {
+  // 每次加载都覆盖为预置的腾讯云配置，确保私有化部署无需手工输入
+  localStorage.setItem(`txCOSConfig`, JSON.stringify(defaultTxCOSConfig))
+  txCOSConfig.value = { ...defaultTxCOSConfig }
+
+  // 若尚未选择图床，则默认切换到腾讯云 COS
+  if (!localStorage.getItem(`imgHost`)) {
+    localStorage.setItem(`imgHost`, `txCOS`)
+    imgHost.value = `txCOS`
+  }
+
   if (localStorage.getItem(`imgHost`)) {
     imgHost.value = localStorage.getItem(`imgHost`)!
   }
@@ -374,7 +398,7 @@ function beforeImageUpload(file: File) {
   }
   // check image host
   let imgHost = localStorage.getItem(`imgHost`)
-  imgHost = imgHost || `default`
+  imgHost = imgHost || `txCOS`
   localStorage.setItem(`imgHost`, imgHost)
 
   const config = localStorage.getItem(`${imgHost}Config`)
@@ -437,7 +461,7 @@ function emitUploads(file: File) {
 
   // 假设有一个上传完成的事件可以监听
   // 或者需要修改 uploadImage 方法使其返回 Promise
-  emit(`uploadImage`, file, cleanup, true)
+  emit(`uploadImage`, file, cleanup, true, { title: finalTitle.value })
 }
 </script>
 
@@ -493,6 +517,32 @@ function emitUploads(file: File) {
               @update:checked="changeCompression"
             />
           </Label>
+          <div class="mt-4 space-y-3">
+            <Label>
+              <span class="my-2 block">
+                图片标题（可选）
+              </span>
+              <Input
+                v-model="imageTitle"
+                placeholder="用于生成图片 title，可留空"
+                autocomplete="off"
+              />
+            </Label>
+            <label class="flex mt-2 items-center gap-2 text-sm text-muted-foreground">
+              <CheckboxRoot
+                v-model:checked="appendRemovalNote"
+                class="bg-background hover:bg-muted h-[18px] w-[18px] flex appearance-none items-center justify-center border border-gray-200 rounded-[4px] outline-hidden"
+              >
+                <CheckboxIndicator>
+                  <Check v-if="appendRemovalNote" class="h-3.5 w-3.5" />
+                </CheckboxIndicator>
+              </CheckboxRoot>
+              <span>添加侵删图注（自动在 title 后追加“（图源网络，侵删）”）</span>
+            </label>
+            <p v-if="finalTitle" class="text-xs text-muted-foreground">
+              将插入：<code>![](... &quot;{{ finalTitle }}&quot;)</code>
+            </p>
+          </div>
           <div
             class="bg-clip-padding mt-4 h-50 relative flex flex-col cursor-pointer items-center justify-evenly border-2 rounded border-dashed transition-colors hover:border-gray-700 hover:bg-gray-400/50 dark:hover:border-gray-200 dark:hover:bg-gray-500/50"
             :class="{

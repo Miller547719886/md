@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { getDefaultMpProfile } from '@md/shared/configs'
 import { ChevronDownIcon, Menu, Settings } from 'lucide-vue-next'
-import { h, markRaw, onMounted, onUnmounted, ref } from 'vue'
+import { computed, h, markRaw, onMounted, onUnmounted, ref } from 'vue'
 import img01 from '@/assets/images/01.png'
 import img02 from '@/assets/images/02.png'
 import img03 from '@/assets/images/03.png'
@@ -17,7 +17,7 @@ const emit = defineEmits([`startCopy`, `endCopy`])
 
 const store = useStore()
 
-const { output, primaryColor, editor } = storeToRefs(store)
+const { output, primaryColor, editor, glossaryEntries, authorName, reviewerName, references } = storeToRefs(store)
 
 const { editorRefresh } = store
 
@@ -31,6 +31,48 @@ const COPY_GUIDE_TOTAL = 5
 const guideImages = [img01, img02, img03, img04, img05]
 const helpVideoVisible = ref(false)
 const helpVideoRef = ref<HTMLVideoElement | null>(null)
+const copyAppendixDialogVisible = ref(false)
+
+// 附录填写校验：作者/审核/参考文献任一为空，或存在名词解释但释义为空时，触发提醒
+const missingAppendixFields = computed(() => {
+  const missing: string[] = []
+
+  if (!authorName.value.trim())
+    missing.push(`作者`)
+
+  if (!reviewerName.value.trim())
+    missing.push(`审核`)
+
+  // 参考文献：存在项且任意为空即视为缺失；若列表为空则不强制
+  const hasReferenceItem = references.value.length > 0
+  const hasEmptyReference = references.value.some(item => !item.content.trim())
+  if (hasReferenceItem && hasEmptyReference)
+    missing.push(`参考文献`)
+
+  // 名词解释：仅当正文生成了名词解释时才校验释义
+  const hasGlossary = glossaryEntries.value.length > 0
+  const hasEmptyGlossaryValue = glossaryEntries.value.some(item => !item.value.trim())
+  if (hasGlossary && hasEmptyGlossaryValue)
+    missing.push(`名词解释释义`)
+
+  return missing
+})
+
+const appendixWarningText = computed(() => {
+  if (missingAppendixFields.value.length === 0)
+    return ``
+  const list = missingAppendixFields.value.join(`、`)
+  return `以下附录字段未填写：${list}，确认是否继续复制？`
+})
+
+const appendixWarningHtml = computed(() => {
+  if (missingAppendixFields.value.length === 0)
+    return ``
+  const list = missingAppendixFields.value
+    .map(field => `<strong>${field}</strong>`)
+    .join(`、`)
+  return `以下附录字段未填写：${list}，确认是否继续复制？`
+})
 
 // 处理帮助菜单事件
 function handleOpenAbout() {
@@ -226,6 +268,22 @@ async function copy() {
     })
   }, 350)
 }
+
+// 处理复制按钮点击：若附录为空则先提醒
+function handleCopyClick() {
+  if (missingAppendixFields.value.length > 0) {
+    copyAppendixDialogVisible.value = true
+    return
+  }
+
+  copy()
+}
+
+// 提醒弹窗内确认继续复制
+function handleConfirmCopy() {
+  copyAppendixDialogVisible.value = false
+  copy()
+}
 </script>
 
 <template>
@@ -287,7 +345,7 @@ async function copy() {
       <div
         class="bg-background space-x-1 text-background-foreground flex items-center border rounded-md"
       >
-        <Button variant="ghost" class="shadow-none text-sm px-2 md:px-4" @click="copy">
+        <Button variant="ghost" class="shadow-none text-sm px-2 md:px-4" @click="handleCopyClick">
           复制
         </Button>
         <Separator orientation="vertical" class="h-5" />
@@ -334,6 +392,28 @@ async function copy() {
   <AboutDialog :visible="aboutDialogVisible" @close="aboutDialogVisible = false" />
   <FundDialog :visible="fundDialogVisible" @close="fundDialogVisible = false" />
   <EditorStateDialog :visible="editorStateDialogVisible" @close="editorStateDialogVisible = false" />
+  <AlertDialog v-model:open="copyAppendixDialogVisible">
+    <AlertDialogContent>
+      <AlertDialogHeader>
+        <AlertDialogTitle>附录填写校验</AlertDialogTitle>
+        <AlertDialogDescription>
+          <div
+            v-if="appendixWarningHtml"
+            v-html="appendixWarningHtml"
+          />
+          <template v-else>
+            {{ appendixWarningText || '附录存在未填写的字段，确认是否继续复制？' }}
+          </template>
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel>去完善附录</AlertDialogCancel>
+        <AlertDialogAction @click="handleConfirmCopy">
+          确认复制
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  </AlertDialog>
 
   <!-- 平台使用视频全屏播放器 -->
   <div

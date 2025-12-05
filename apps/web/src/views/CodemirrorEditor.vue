@@ -104,32 +104,6 @@ function scrollMetaToBottom() {
   })
 }
 
-// 仅在新增名词解释时滚动到最新一项，避免跳到参考文献区域
-function scrollGlossaryToLast() {
-  nextTick(() => {
-    const list = glossaryListRef.value
-    if (!list)
-      return
-
-    const lastItem = list.lastElementChild as HTMLElement | null
-    lastItem?.scrollIntoView({ block: `start`, behavior: `smooth` })
-  })
-}
-
-// 添加名词解释项
-function addGlossary() {
-  glossaryEntries.value.push({
-    id: Date.now(),
-    label: ``,
-    value: ``,
-  })
-  scrollGlossaryToLast()
-}
-
-function removeGlossary(index: number) {
-  glossaryEntries.value.splice(index, 1)
-}
-
 // 添加参考文献项
 function addReference() {
   references.value.push({
@@ -168,13 +142,22 @@ onMounted(() => {
   updateEditorSectionsHeight()
 })
 
-// 监听名词解释、作者、审核和参考文献信息变化，触发编辑器刷新
-watch([() => glossaryEntries.value.map(r => `${r.label}|${r.value}`), authorName, reviewerName, () => references.value.map(r => r.content)], () => {
+// 监听作者、审核和参考文献信息变化，触发编辑器刷新（名词解释由正文自动生成）
+watch([authorName, reviewerName, () => references.value.map(r => r.content)], () => {
   // 延迟执行避免频繁更新
   setTimeout(() => {
     editorRefresh()
   }, 300)
 }, { deep: true })
+
+// 监听名词解释释义修改，保持预览同步（名词不可编辑，释义可编辑）
+watch(() => glossaryEntries.value.map(r => `${r.label}|${r.value}`).join(`||`), (nv, ov) => {
+  if (nv === ov)
+    return
+  setTimeout(() => {
+    editorRefresh()
+  }, 300)
+})
 
 const {
   AIPolishBtnRef,
@@ -298,8 +281,12 @@ function beforeUpload(file: File) {
   return true
 }
 
+interface UploadExtra {
+  title?: string
+}
+
 // 图片上传结束
-function uploaded(imageUrl: string) {
+function uploaded(imageUrl: string, options?: UploadExtra) {
   if (!imageUrl) {
     toast.error(`上传图片未知异常`)
     return
@@ -309,7 +296,10 @@ function uploaded(imageUrl: string) {
   }, 1000)
   // 上传成功，获取光标
   const cursor = editor.value!.getCursor()
-  const markdownImage = `![](${imageUrl})`
+  const title = options?.title?.trim()
+  const markdownImage = title
+    ? `![](${imageUrl} "${title}")`
+    : `![](${imageUrl})`
   // 将 Markdown 形式的 URL 插入编辑框光标所在位置
   toRaw(store.editor!).replaceSelection(`\n${markdownImage}\n`, cursor as any)
   toast.success(`图片上传成功`)
@@ -329,6 +319,7 @@ async function uploadImage(
   file: File,
   cb?: { (url: any, data: string): void, (arg0: unknown): void } | undefined,
   applyUrl?: boolean,
+  options?: UploadExtra,
 ) {
   try {
     isImgLoading.value = true
@@ -343,10 +334,10 @@ async function uploadImage(
       cb(url, base64Content)
     }
     else {
-      uploaded(url)
+      uploaded(url, options)
     }
     if (applyUrl) {
-      return uploaded(url)
+      return uploaded(url, options)
     }
   }
   catch (err) {
@@ -675,18 +666,9 @@ onUnmounted(() => {
                   ref="metaContentRef"
                   class="meta-content px-3 pb-3 pt-2 space-y-3"
                 >
-                  <div class="space-y-2">
+                  <div v-if="glossaryEntries.length > 0" class="space-y-2">
                     <div class="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>名词解释</span>
-                      <button
-                        class="flex items-center space-x-1 px-2 py-1 text-xs text-primary border border-primary/30 rounded hover:bg-primary/10 transition-colors"
-                        @click="addGlossary"
-                      >
-                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
-                        <span>添加</span>
-                      </button>
+                      <span>名词解释（自动从正文内“专有名词”片段生成）</span>
                     </div>
 
                     <div ref="glossaryListRef" class="space-y-3">
@@ -695,35 +677,24 @@ onUnmounted(() => {
                         :key="item.id"
                         class="flex flex-col gap-2"
                       >
-                        <div class="grid grid-cols-[10rem_1fr_auto] gap-2 items-center text-xs text-muted-foreground w-full">
+                        <div class="grid grid-cols-[10rem_1fr] gap-2 items-center text-xs text-muted-foreground w-full">
                           <label class="whitespace-nowrap">名词 [{{ index + 1 }}]</label>
                           <label class="whitespace-nowrap">释义</label>
-                          <span />
                         </div>
 
-                        <div class="grid grid-cols-[10rem_1fr_auto] gap-2 w-full">
+                        <div class="grid grid-cols-[10rem_1fr] gap-2 w-full">
                           <input
-                            v-model="item.label"
+                            :value="item.label"
                             type="text"
-                            placeholder="请输入名词"
-                            class="w-full px-2 h-8 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary/50 bg-background"
+                            disabled
+                            class="w-full px-2 h-8 text-xs border rounded bg-muted/30 text-muted-foreground cursor-not-allowed"
                           >
                           <textarea
                             v-model="item.value"
-                            rows="4"
-                            placeholder="请输入对应的释义"
+                            rows="5"
+                            placeholder="请输入释义"
                             class="w-full px-2 py-1 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-primary/50 bg-background resize-none"
                           />
-                          <button
-                            v-if="glossaryEntries.length > 1"
-                            class="p-0.5 text-red-500 hover:bg-red-50 rounded transition-colors self-start"
-                            title="删除此项"
-                            @click="removeGlossary(index)"
-                          >
-                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                          </button>
                         </div>
                       </div>
                     </div>

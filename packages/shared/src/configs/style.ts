@@ -237,7 +237,7 @@ export const defaultStyleConfig = {
   isCountStatus: true,
   theme: themeOptions[0].value,
   fontFamily: fontFamilyOptions[0].value,
-  fontSize: fontSizeOptions[2].value,
+  fontSize: fontSizeOptions[0].value,
   primaryColor: colorOptions[0].value,
   codeBlockTheme: codeBlockThemeOptions[23].value,
   legend: legendOptions[0].value,
