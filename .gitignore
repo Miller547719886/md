@@ -17,6 +17,11 @@ node_modules
 .env.development.local
 .env.test.local
 .env.production.local
+.env
+
+# build outputs
+/apps/web/dist
+/packages/md-cli/dist
 
 npm-debug.log*
 yarn-debug.log*

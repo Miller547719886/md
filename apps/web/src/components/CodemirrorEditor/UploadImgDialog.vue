@@ -67,7 +67,7 @@ const txCOSSchema = toTypedSchema(yup.object({
   path: yup.string().optional(),
 }))
 
-// 私有化部署默认配置，默认从环境变量注入，避免凭证写入仓库
+// 私有化部署默认配置，依赖构建时的环境变量注入
 const defaultTxCOSConfig = {
   secretId: import.meta.env.VITE_TXCOS_SECRET_ID || ``,
   secretKey: import.meta.env.VITE_TXCOS_SECRET_KEY || ``,
@@ -77,12 +77,28 @@ const defaultTxCOSConfig = {
   path: import.meta.env.VITE_TXCOS_PATH || ``,
 }
 
-const storedTxCOSConfig = localStorage.getItem(`txCOSConfig`)
-const txCOSConfig = ref(storedTxCOSConfig
-  ? JSON.parse(storedTxCOSConfig)
-  : defaultTxCOSConfig)
+function resolveTxCOSConfig() {
+  const raw = localStorage.getItem(`txCOSConfig`)
+  if (!raw)
+    return { ...defaultTxCOSConfig }
+
+  try {
+    const parsed = JSON.parse(raw)
+    const hasValue = Object.values(parsed).some(v => v && String(v).trim() !== ``)
+    return hasValue ? parsed : { ...defaultTxCOSConfig }
+  }
+  catch (e) {
+    console.warn(`txCOSConfig parse failed`, e)
+    return { ...defaultTxCOSConfig }
+  }
+}
+
+const txCOSConfig = ref(resolveTxCOSConfig())
 
 function txCOSSubmit(formValues: any) {
+  if (!formValues) {
+    formValues = { ...defaultTxCOSConfig }
+  }
   localStorage.setItem(`txCOSConfig`, JSON.stringify(formValues))
   txCOSConfig.value = formValues
   toast.success(`保存成功`)
@@ -380,6 +396,11 @@ onBeforeMount(() => {
   if (storedCompression !== null) {
     useCompression.value = storedCompression === `true`
   }
+})
+
+// 页面挂载后自动执行一次“保存配置”逻辑，等同于用户点击保存按钮
+onMounted(() => {
+  txCOSSubmit()
 })
 
 function changeImgHost() {
