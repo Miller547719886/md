@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { getDefaultMpProfile } from '@md/shared/configs'
+import { driver } from 'driver.js'
 import { ChevronDownIcon, Menu, Settings } from 'lucide-vue-next'
-import { computed, h, markRaw, onMounted, onUnmounted, ref } from 'vue'
+import { computed, h, markRaw, nextTick, onMounted, onUnmounted, ref } from 'vue'
 import img01 from '@/assets/images/01.png'
 import img02 from '@/assets/images/02.png'
 import img03 from '@/assets/images/03.png'
@@ -12,6 +13,7 @@ import { addPrefix, processClipboardContent } from '@/utils'
 import { copyHtml } from '@/utils/clipboard'
 import CopyGuideToast from './CopyGuideToast.vue'
 import FormatDropdown from './FormatDropdown.vue'
+import 'driver.js/dist/driver.css'
 
 const emit = defineEmits([`startCopy`, `endCopy`])
 
@@ -20,6 +22,7 @@ const store = useStore()
 const { output, primaryColor, editor, glossaryEntries, authorName, reviewerName, references } = storeToRefs(store)
 
 const { editorRefresh } = store
+const GUIDE_STORAGE_KEY = addPrefix(`usageGuideShown`)
 
 // 对话框状态
 const aboutDialogVisible = ref(false)
@@ -29,8 +32,6 @@ const copyGuideDialogVisible = ref(false)
 const copyGuideActiveIndex = ref(0)
 const COPY_GUIDE_TOTAL = 5
 const guideImages = [img01, img02, img03, img04, img05]
-const helpVideoVisible = ref(false)
-const helpVideoRef = ref<HTMLVideoElement | null>(null)
 const copyAppendixDialogVisible = ref(false)
 
 // 附录填写校验：作者/审核/参考文献任一为空，或存在名词解释但释义为空时，触发提醒
@@ -113,11 +114,6 @@ function closeCopyGuide() {
 
 function handleGuideKeydown(e: KeyboardEvent) {
   if (e.key === `Escape`) {
-    if (helpVideoVisible.value) {
-      closeHelpVideo()
-      return
-    }
-
     closeCopyGuide()
   }
 
@@ -132,30 +128,9 @@ function handleGuideKeydown(e: KeyboardEvent) {
   }
 }
 
-function openHelpVideo() {
-  helpVideoVisible.value = true
-  nextTick(() => {
-    if (helpVideoRef.value) {
-      helpVideoRef.value.currentTime = 0
-      helpVideoRef.value.play().catch(() => {})
-    }
-  })
-}
-
-function closeHelpVideo() {
-  if (helpVideoRef.value) {
-    helpVideoRef.value.pause()
-    helpVideoRef.value.currentTime = 0
-  }
-  helpVideoVisible.value = false
-}
-
-function openMarkdownGuide() {
-  window.open(`https://markdown.com.cn/basic-syntax/`, `_blank`, `noreferrer`)
-}
-
 onMounted(() => {
   window.addEventListener(`keydown`, handleGuideKeydown)
+  tryAutoGuide()
 })
 
 onUnmounted(() => {
@@ -284,6 +259,98 @@ function handleConfirmCopy() {
   copyAppendixDialogVisible.value = false
   copy()
 }
+
+// 打开使用向导
+function openGuide() {
+  localStorage.setItem(GUIDE_STORAGE_KEY, `1`)
+  const guide = driver({
+    showProgress: true,
+    nextBtnText: `下一步`,
+    prevBtnText: `上一步`,
+    doneBtnText: `完成`,
+    steps: [
+      {
+        element: `.editor-main`,
+        popover: {
+          title: `正文编辑区`,
+          description: `在这里创作你的内容（参考样例文章“照猫画虎”即可上手）。`,
+          side: `right`,
+          align: `start`,
+        },
+      },
+      {
+        element: `#markdown-guide-btn`,
+        popover: {
+          title: `Markdown 教程`,
+          description: `点击这里查看完整 Markdown 教程。`,
+          side: `bottom`,
+          align: `start`,
+        },
+      },
+      {
+        element: `.meta-content`,
+        popover: {
+          title: `附录编辑区`,
+          description: `在这里补充名词解释、作者、参考文献等信息。`,
+          side: `right`,
+          align: `start`,
+        },
+      },
+      {
+        element: `.edit-button`,
+        popover: {
+          title: `编辑菜单`,
+          description: `点击“编辑” -> “上传图片”以添加图片资源；点击“编辑” -> “插入表格”以添加表格。`,
+          side: `bottom`,
+          align: `start`,
+        },
+      },
+      {
+        element: `.preview`,
+        popover: {
+          title: `右侧预览`,
+          description: `在这里预览文章渲染效果。`,
+          side: `left`,
+          align: `center`,
+        },
+      },
+      {
+        element: `#copy-actions`,
+        popover: {
+          title: `复制发布`,
+          description: `内容确认无误后，就可以复制到公众号平台发布啦！`,
+          side: `bottom`,
+          align: `center`,
+        },
+      },
+      {
+        element: `.use-tutorial`,
+        popover: {
+          title: `再次查看向导`,
+          description: `点击此处再看一遍使用向导。`,
+          side: `bottom`,
+          align: `end`,
+        },
+      },
+    ],
+  })
+
+  guide.drive()
+}
+
+function tryAutoGuide() {
+  if (localStorage.getItem(GUIDE_STORAGE_KEY) === `1`)
+    return
+
+  nextTick(() => {
+    // 等待关键节点渲染完成后再启动引导
+    setTimeout(() => {
+      if (!document.querySelector(`.editor-main`))
+        return
+      openGuide()
+    }, 300)
+  })
+}
 </script>
 
 <template>
@@ -295,7 +362,9 @@ function handleConfirmCopy() {
       <Menubar class="menubar border-0">
         <FileDropdown @open-editor-state="handleOpenEditorState" />
         <FormatDropdown />
-        <EditDropdown />
+        <span class="edit-button inline-flex">
+          <EditDropdown />
+        </span>
         <StyleDropdown />
         <HelpDropdown @open-about="handleOpenAbout" @open-fund="handleOpenFund" />
       </Menubar>
@@ -313,7 +382,9 @@ function handleConfirmCopy() {
           <MenubarContent align="start">
             <FileDropdown :as-sub="true" @open-editor-state="handleOpenEditorState" />
             <FormatDropdown :as-sub="true" />
-            <EditDropdown :as-sub="true" />
+            <span class="edit-button inline-flex">
+              <EditDropdown :as-sub="true" />
+            </span>
             <StyleDropdown :as-sub="true" />
             <HelpDropdown :as-sub="true" @open-about="handleOpenAbout" @open-fund="handleOpenFund" />
           </MenubarContent>
@@ -323,26 +394,18 @@ function handleConfirmCopy() {
 
     <!-- 右侧操作区 -->
     <div class="space-x-2 flex flex-wrap items-center">
-      <!-- 平台使用视频按钮 -->
+      <!-- 使用向导按钮 -->
       <Button
+        class="use-tutorial text-sm"
         variant="outline"
-        class="text-sm"
-        @click="openHelpVideo"
+        @click="openGuide"
       >
-        如何使用本平台?
-      </Button>
-
-      <!-- 学习 Markdown 语法按钮 -->
-      <Button
-        variant="outline"
-        class="text-sm"
-        @click="openMarkdownGuide"
-      >
-        5 分钟学会 Markdown 语法
+        使用向导
       </Button>
 
       <!-- 复制按钮组 -->
       <div
+        id="copy-actions"
         class="bg-background space-x-1 text-background-foreground flex items-center border rounded-md"
       >
         <Button variant="ghost" class="shadow-none text-sm px-2 md:px-4" @click="handleCopyClick">
@@ -414,29 +477,6 @@ function handleConfirmCopy() {
       </AlertDialogFooter>
     </AlertDialogContent>
   </AlertDialog>
-
-  <!-- 平台使用视频全屏播放器 -->
-  <div
-    v-if="helpVideoVisible"
-    class="fixed inset-0 z-[10000] flex flex-col bg-black/90"
-  >
-    <button
-      type="button"
-      class="absolute right-6 top-6 rounded-full bg-black/60 px-3 py-1 text-xs text-white hover:bg-black/80"
-      @click="closeHelpVideo"
-    >
-      关闭
-    </button>
-    <div class="flex h-full w-full items-center justify-center px-4 pb-6 pt-8 sm:px-6">
-      <video
-        ref="helpVideoRef"
-        class="h-full w-full max-w-4xl max-h-[80vh] rounded-md bg-black object-contain"
-        src="https://tencent-server-cos-1255953774.cos.ap-nanjing.myqcloud.com/ccnu/mp.weixin/mp_wechat_tutorial.mp4"
-        controls
-        autoplay
-      />
-    </div>
-  </div>
 
   <!-- 复制后操作引导全屏轮播 -->
   <div

@@ -135,16 +135,13 @@ onBeforeMount(() => {
           </Button>
         </TooltipTrigger>
         <TooltipContent>
-          <span>受官方平台限制，个人主体注册的公众号无法调用发布相关api接口，请到官方平台发布文章。</span>
-          <Primitive
-            as="a"
-            class="ml-1 text-blue-500 underline"
-            href="https://mp.weixin.qq.com/cgi-bin/appmsg"
-            target="_blank"
-            rel="noreferrer"
-          >
-            去发布
-          </Primitive>
+          <span>受官方平台限制，个人主体注册的公众号无法调用发布相关api接口。</span>
+          <br>
+          <span>
+            请点击
+            <strong :style="{ color: store.primaryColor }">左侧「复制」按钮</strong>
+            ，将文章复制到公众号后台发布。
+          </span>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

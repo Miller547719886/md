@@ -10,6 +10,7 @@ import {
   AIPolishPopover,
   useAIPolish,
 } from '@/components/AIPolish'
+import { Button } from '@/components/ui/button'
 import {
   ResizableHandle,
   ResizablePanel,
@@ -24,6 +25,7 @@ const store = useStore()
 const displayStore = useDisplayStore()
 
 const { isDark, output, editor, glossaryEntries, authorName, reviewerName, references } = storeToRefs(store)
+const { primaryColor } = storeToRefs(store)
 const { editorRefresh } = store
 
 const { toggleShowUploadImgDialog } = displayStore
@@ -75,6 +77,11 @@ const showEditor = ref(true)
 // 切换编辑/预览视图（仅限移动端）
 function toggleView() {
   showEditor.value = !showEditor.value
+}
+
+// 打开 Markdown 语法学习链接
+function openMarkdownGuide() {
+  window.open(`https://markdown.com.cn/basic-syntax/`, `_blank`, `noreferrer`)
 }
 
 // 作者&审核 + 参考文献合并抽屉（默认展开）
@@ -620,8 +627,17 @@ onUnmounted(() => {
               }"
             >
               <!-- 正文编辑区标签 -->
-              <div class="editor-label border-b px-3 py-1.5 text-xs text-muted-foreground bg-muted/30">
-                正文编辑区
+              <div class="editor-label border-b px-3 py-1.5 text-xs text-muted-foreground bg-muted/30 flex items-center gap-3">
+                <span>正文编辑区</span>
+                <Button
+                  id="markdown-guide-btn"
+                  size="xs"
+                  class="text-[11px] leading-none px-2 bg-transparent hover:bg-transparent underline decoration-1 underline-offset-2"
+                  :style="{ color: primaryColor, cursor: 'pointer' }"
+                  @click="openMarkdownGuide"
+                >
+                  不会 Markdown 语法？5 分钟学会！
+                </Button>
               </div>
 
               <!-- 正文编辑主区域：占用剩余空间 -->

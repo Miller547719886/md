@@ -96,12 +96,9 @@ function resolveTxCOSConfig() {
 const txCOSConfig = ref(resolveTxCOSConfig())
 
 function txCOSSubmit(formValues: any) {
-  if (!formValues) {
-    formValues = { ...defaultTxCOSConfig }
-  }
   localStorage.setItem(`txCOSConfig`, JSON.stringify(formValues))
   txCOSConfig.value = formValues
-  toast.success(`保存成功`)
+  toast.success(`腾讯 COS 配置保存成功`)
 }
 
 // 七牛云
@@ -400,7 +397,7 @@ onBeforeMount(() => {
 
 // 页面挂载后自动执行一次“保存配置”逻辑，等同于用户点击保存按钮
 onMounted(() => {
-  txCOSSubmit()
+  txCOSSubmit(txCOSConfig.value)
 })
 
 function changeImgHost() {
