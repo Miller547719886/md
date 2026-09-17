@@ -318,6 +318,15 @@ function openGuide() {
     doneBtnText: `完成`,
     steps: [
       {
+        element: `.style-theme`,
+        popover: {
+          title: `主题选择`,
+          description: `在这里选择你喜欢的主题`,
+          side: `bottom`,
+          align: `start`,
+        },
+      },
+      {
         element: `.editor-main`,
         popover: {
           title: `正文编辑区`,
@@ -413,7 +422,9 @@ function tryAutoGuide() {
         <span class="edit-button inline-flex">
           <EditDropdown />
         </span>
-        <StyleDropdown />
+        <span class="style-theme inline-flex">
+          <StyleDropdown />
+        </span>
         <HelpDropdown
           @open-about="handleOpenAbout"
           @open-fund="handleOpenFund"
@@ -439,7 +450,9 @@ function tryAutoGuide() {
             <span class="edit-button inline-flex">
               <EditDropdown :as-sub="true" />
             </span>
-            <StyleDropdown :as-sub="true" />
+            <span class="style-theme inline-flex">
+              <StyleDropdown :as-sub="true" />
+            </span>
             <HelpDropdown
               :as-sub="true"
               @open-about="handleOpenAbout"
