@@ -1,6 +1,12 @@
+import type { ThemeId } from '@md/shared/gzh'
 import { initRenderer } from '@md/core/renderer'
-import { customCssWithTemplate, customizeTheme, modifyHtmlContent } from '@md/core/utils'
-import { css2json, themeMap } from '@md/shared'
+import {
+  customCssWithTemplate,
+  customizeTheme,
+  modifyHtmlContent,
+} from '@md/core/utils'
+import { css2json, resolveClassicTheme } from '@md/shared'
+import { isGzhTheme } from '@md/shared/gzh'
 import * as vscode from 'vscode'
 import { css } from './css'
 import { MarkdownTreeDataProvider } from './treeDataProvider'
@@ -10,27 +16,40 @@ let activePanel: vscode.WebviewPanel | undefined
 export function activate(context: vscode.ExtensionContext) {
   // Register TreeDataProvider
   const treeDataProvider = new MarkdownTreeDataProvider(context)
-  vscode.window.registerTreeDataProvider(`markdown.preview.view`, treeDataProvider)
+  vscode.window.registerTreeDataProvider(
+    `markdown.preview.view`,
+    treeDataProvider,
+  )
 
   // Command for registering style settings
   context.subscriptions.push(
     vscode.commands.registerCommand(`markdown.setFontSize`, (size: string) => {
       treeDataProvider.updateFontSize(size)
     }),
-    vscode.commands.registerCommand(`markdown.setTheme`, (theme: keyof typeof themeMap) => {
+    vscode.commands.registerCommand(`markdown.setTheme`, (theme: ThemeId) => {
       treeDataProvider.updateTheme(theme)
     }),
-    vscode.commands.registerCommand(`markdown.setPrimaryColor`, (color: string) => {
-      treeDataProvider.updatePrimaryColor(color)
-    }),
-    vscode.commands.registerCommand(`markdown.setFontFamily`, (font: string) => {
-      treeDataProvider.updateFontFamily(font)
-    }),
+    vscode.commands.registerCommand(
+      `markdown.setPrimaryColor`,
+      (color: string) => {
+        treeDataProvider.updatePrimaryColor(color)
+      },
+    ),
+    vscode.commands.registerCommand(
+      `markdown.setFontFamily`,
+      (font: string) => {
+        treeDataProvider.updateFontFamily(font)
+      },
+    ),
     vscode.commands.registerCommand(`markdown.toggleCountStatus`, () => {
-      treeDataProvider.updateCountStatus(!treeDataProvider.getCurrentCountStatus())
+      treeDataProvider.updateCountStatus(
+        !treeDataProvider.getCurrentCountStatus(),
+      )
     }),
     vscode.commands.registerCommand(`markdown.toggleMacCodeBlock`, () => {
-      treeDataProvider.updateMacCodeBlock(!treeDataProvider.getCurrentMacCodeBlock())
+      treeDataProvider.updateMacCodeBlock(
+        !treeDataProvider.getCurrentMacCodeBlock(),
+      )
     }),
   )
 
@@ -67,12 +86,13 @@ export function activate(context: vscode.ExtensionContext) {
     function updateWebview() {
       if (!editor)
         return
+      const currentTheme = treeDataProvider.getCurrentTheme()
       const renderer = initRenderer({
         theme: customCssWithTemplate(
           // TODO
           css2json(``),
           treeDataProvider.getCurrentPrimaryColor(),
-          customizeTheme(themeMap[treeDataProvider.getCurrentTheme()], {
+          customizeTheme(resolveClassicTheme(currentTheme), {
             fontSize: treeDataProvider.getCurrentFontSizeNumber(),
             color: treeDataProvider.getCurrentPrimaryColor(),
           }),
@@ -84,6 +104,7 @@ export function activate(context: vscode.ExtensionContext) {
         countStatus: treeDataProvider.getCurrentCountStatus(),
         isMacCodeBlock: treeDataProvider.getCurrentMacCodeBlock(),
         legend: `none`,
+        gzhThemeId: isGzhTheme(currentTheme) ? currentTheme : null,
       })
       const markdownContent = editor.document.getText()
       const html = modifyHtmlContent(markdownContent, renderer)
@@ -94,11 +115,13 @@ export function activate(context: vscode.ExtensionContext) {
     updateWebview()
 
     // Monitor the changes of documents
-    const changeSubscription = vscode.workspace.onDidChangeTextDocument((e: vscode.TextDocumentChangeEvent) => {
-      if (e.document === editor.document) {
-        updateWebview()
-      }
-    })
+    const changeSubscription = vscode.workspace.onDidChangeTextDocument(
+      (e: vscode.TextDocumentChangeEvent) => {
+        if (e.document === editor.document) {
+          updateWebview()
+        }
+      },
+    )
 
     // Cancel the subscription when the panel is closed
     panel.onDidDispose(() => {
@@ -109,14 +132,24 @@ export function activate(context: vscode.ExtensionContext) {
   context.subscriptions.push(disposable)
 
   // When the Markdown file is opened, the preview button is displayed in the status bar.
-  vscode.window.onDidChangeActiveTextEditor((editor: vscode.TextEditor | undefined) => {
-    if (editor && editor.document.languageId === `markdown`) {
-      vscode.commands.executeCommand(`setContext`, `markdownFileActive`, true)
-    }
-    else {
-      vscode.commands.executeCommand(`setContext`, `markdownFileActive`, false)
-    }
-  })
+  vscode.window.onDidChangeActiveTextEditor(
+    (editor: vscode.TextEditor | undefined) => {
+      if (editor && editor.document.languageId === `markdown`) {
+        vscode.commands.executeCommand(
+          `setContext`,
+          `markdownFileActive`,
+          true,
+        )
+      }
+      else {
+        vscode.commands.executeCommand(
+          `setContext`,
+          `markdownFileActive`,
+          false,
+        )
+      }
+    },
+  )
 }
 
 function wrapHtmlTag(html: string, css: string) {

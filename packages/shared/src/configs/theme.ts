@@ -1,5 +1,7 @@
+import type { ThemeId } from '../gzh'
 import type { IConfigOption, Theme } from '../types'
 import { toMerged } from 'es-toolkit'
+import { gzhThemeOptions } from '../gzh'
 
 const defaultTheme: Theme = {
   base: {
@@ -96,23 +98,17 @@ const defaultTheme: Theme = {
       'color': `hsl(var(--foreground))`,
     },
 
-    blockquote_note: {
-    },
+    blockquote_note: {},
 
-    blockquote_tip: {
-    },
+    blockquote_tip: {},
 
-    blockquote_info: {
-    },
+    blockquote_info: {},
 
-    blockquote_important: {
-    },
+    blockquote_important: {},
 
-    blockquote_warning: {
-    },
+    blockquote_warning: {},
 
-    blockquote_caution: {
-    },
+    blockquote_caution: {},
 
     // GFM 警告块标题
     blockquote_title: {
@@ -146,23 +142,17 @@ const defaultTheme: Theme = {
       color: `#e5534b`,
     },
 
-    blockquote_p_note: {
-    },
+    blockquote_p_note: {},
 
-    blockquote_p_tip: {
-    },
+    blockquote_p_tip: {},
 
-    blockquote_p_info: {
-    },
+    blockquote_p_info: {},
 
-    blockquote_p_important: {
-    },
+    blockquote_p_important: {},
 
-    blockquote_p_warning: {
-    },
+    blockquote_p_warning: {},
 
-    blockquote_p_caution: {
-    },
+    blockquote_p_caution: {},
 
     // 代码块
     code_pre: {
@@ -318,8 +308,7 @@ const defaultTheme: Theme = {
 }
 
 const graceTheme = toMerged(defaultTheme, {
-  base: {
-  },
+  base: {},
   block: {
     'container': {},
     'h1': {
@@ -355,8 +344,7 @@ const graceTheme = toMerged(defaultTheme, {
       'font-size': `1em`,
     },
 
-    'p': {
-    },
+    'p': {},
 
     'blockquote': {
       'font-style': `italic`,
@@ -368,8 +356,7 @@ const graceTheme = toMerged(defaultTheme, {
       'margin-bottom': `1em`,
     },
 
-    'blockquote_p': {
-    },
+    'blockquote_p': {},
 
     'markdown-alert': {
       'font-style': `italic`,
@@ -397,13 +384,9 @@ const graceTheme = toMerged(defaultTheme, {
       'padding-left': `1.5em`,
     },
 
-    'footnotes': {
+    'footnotes': {},
 
-    },
-
-    'figure': {
-
-    },
+    'figure': {},
 
     'hr': {
       height: `1px`,
@@ -417,20 +400,15 @@ const graceTheme = toMerged(defaultTheme, {
       margin: `0.5em 8px`,
     },
 
-    codespan: {
-    },
+    codespan: {},
 
-    em: {
-    },
+    em: {},
 
-    link: {
-    },
+    link: {},
 
-    wx_link: {
-    },
+    wx_link: {},
 
-    strong: {
-    },
+    strong: {},
 
     table: {
       'border-collapse': `separate`,
@@ -454,15 +432,12 @@ const graceTheme = toMerged(defaultTheme, {
       color: `rgba(0,0,0,0.5)`,
     },
 
-    figcaption: {
-
-    },
+    figcaption: {},
   },
 })
 
 const simpleTheme = toMerged(defaultTheme, {
-  base: {
-  },
+  base: {},
   block: {
     container: {},
     h1: {
@@ -536,45 +511,31 @@ const simpleTheme = toMerged(defaultTheme, {
       'font-style': `italic`,
     },
 
-    blockquote_title: {
-    },
+    blockquote_title: {},
 
-    blockquote_title_note: {
+    blockquote_title_note: {},
 
-    },
+    blockquote_title_tip: {},
 
-    blockquote_title_tip: {
-    },
+    blockquote_title_info: {},
 
-    blockquote_title_info: {
-    },
+    blockquote_title_important: {},
 
-    blockquote_title_important: {
-    },
+    blockquote_title_warning: {},
 
-    blockquote_title_warning: {
-    },
+    blockquote_title_caution: {},
 
-    blockquote_title_caution: {
-    },
+    blockquote_p_note: {},
 
-    blockquote_p_note: {
-    },
+    blockquote_p_tip: {},
 
-    blockquote_p_tip: {
-    },
+    blockquote_p_info: {},
 
-    blockquote_p_info: {
-    },
+    blockquote_p_important: {},
 
-    blockquote_p_important: {
-    },
+    blockquote_p_warning: {},
 
-    blockquote_p_warning: {
-    },
-
-    blockquote_p_caution: {
-    },
+    blockquote_p_caution: {},
 
     code_pre: {
       border: `1px solid rgba(0, 0, 0, 0.04)`,
@@ -610,8 +571,7 @@ const simpleTheme = toMerged(defaultTheme, {
       margin: `0.5em 8px`,
     },
 
-    strong: {
-    },
+    strong: {},
   },
 })
 
@@ -621,7 +581,7 @@ export const themeMap = {
   simple: simpleTheme,
 }
 
-export const themeOptions: IConfigOption<keyof typeof themeMap>[] = [
+export const classicThemeOptions: IConfigOption<keyof typeof themeMap>[] = [
   {
     label: `经典`,
     value: `default`,
@@ -638,3 +598,14 @@ export const themeOptions: IConfigOption<keyof typeof themeMap>[] = [
     desc: `@okooo5km`,
   },
 ]
+
+export const themeOptions: IConfigOption<ThemeId>[] = [
+  ...gzhThemeOptions,
+  ...classicThemeOptions,
+]
+
+export function resolveClassicTheme(id: ThemeId): Theme {
+  if (id === `grace` || id === `simple` || id === `default`)
+    return themeMap[id]
+  return themeMap.default
+}

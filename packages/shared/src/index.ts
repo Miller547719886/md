@@ -1,4 +1,5 @@
 export * from './configs'
 export * from './constants'
+export * from './gzh'
 export * from './types'
 export * from './utils'

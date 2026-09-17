@@ -1,9 +1,11 @@
+import type { ThemeId } from '@md/shared/gzh'
 import { initRenderer } from '@md/core'
 import {
   defaultStyleConfig,
-  themeMap,
+  resolveClassicTheme,
   widthOptions,
 } from '@md/shared/configs'
+import { getGzhPrimaryColor, isGzhTheme } from '@md/shared/gzh'
 import CodeMirror from 'codemirror'
 import { toPng } from 'html-to-image'
 import { v4 as uuid } from 'uuid'
@@ -54,11 +56,17 @@ export const useStore = defineStore(`store`, () => {
   const toggleDark = useToggle(isDark)
 
   // 是否开启 Mac 代码块
-  const isMacCodeBlock = useStorage(`isMacCodeBlock`, defaultStyleConfig.isMacCodeBlock)
+  const isMacCodeBlock = useStorage(
+    `isMacCodeBlock`,
+    defaultStyleConfig.isMacCodeBlock,
+  )
   const toggleMacCodeBlock = useToggle(isMacCodeBlock)
 
   // 是否开启代码块行号显示
-  const isShowLineNumber = useStorage(`isShowLineNumber`, defaultStyleConfig.isShowLineNumber)
+  const isShowLineNumber = useStorage(
+    `isShowLineNumber`,
+    defaultStyleConfig.isShowLineNumber,
+  )
   const toggleShowLineNumber = useToggle(isShowLineNumber)
 
   // 是否在左侧编辑
@@ -66,7 +74,10 @@ export const useStore = defineStore(`store`, () => {
   const toggleEditOnLeft = useToggle(isEditOnLeft)
 
   // 是否开启微信外链接底部引用
-  const isCiteStatus = useStorage(`isCiteStatus`, defaultStyleConfig.isCiteStatus)
+  const isCiteStatus = useStorage(
+    `isCiteStatus`,
+    defaultStyleConfig.isCiteStatus,
+  )
   const toggleCiteStatus = useToggle(isCiteStatus)
 
   // 是否开启 AI 工具箱
@@ -74,7 +85,10 @@ export const useStore = defineStore(`store`, () => {
   const toggleAIToolbox = useToggle(showAIToolbox)
 
   // 是否统计字数和阅读时间
-  const isCountStatus = useStorage(`isCountStatus`, defaultStyleConfig.isCountStatus)
+  const isCountStatus = useStorage(
+    `isCountStatus`,
+    defaultStyleConfig.isCountStatus,
+  )
   const toggleCountStatus = useToggle(isCountStatus)
 
   // 是否开启段落首行缩进
@@ -87,7 +101,11 @@ export const useStore = defineStore(`store`, () => {
   const output = ref(``)
 
   // 文本字体
-  const theme = useStorage<keyof typeof themeMap>(addPrefix(`theme`), defaultStyleConfig.theme)
+  const theme = useStorage<ThemeId>(
+    addPrefix(`theme`),
+    defaultStyleConfig.theme,
+  )
+  const gzhThemeIdOf = (id: ThemeId) => (isGzhTheme(id) ? id : null)
   // 文本字体
   const fontFamily = useStorage(`fonts`, defaultStyleConfig.fontFamily)
   // 文本大小
@@ -95,21 +113,29 @@ export const useStore = defineStore(`store`, () => {
   // 主色
   const primaryColor = useStorage(`color`, defaultStyleConfig.primaryColor)
   // 代码块主题
-  const codeBlockTheme = useStorage(`codeBlockTheme`, defaultStyleConfig.codeBlockTheme)
+  const codeBlockTheme = useStorage(
+    `codeBlockTheme`,
+    defaultStyleConfig.codeBlockTheme,
+  )
   // 图注格式
   const legend = useStorage(`legend`, defaultStyleConfig.legend)
 
   // 预览宽度
   const previewWidth = useStorage(`previewWidth`, widthOptions[0].value)
 
-  const fontSizeNumber = computed(() => Number(fontSize.value.replace(`px`, ``)))
+  const fontSizeNumber = computed(() =>
+    Number(fontSize.value.replace(`px`, ``)),
+  )
 
   // 内容编辑器
   const editor = ref<CodeMirror.EditorFromTextArea | null>(null)
   // 预备弃用的旧字段
   const editorContent = useStorage(`__editor_content`, DEFAULT_CONTENT)
 
-  const isOpenRightSlider = useStorage(addPrefix(`is_open_right_slider`), false)
+  const isOpenRightSlider = useStorage(
+    addPrefix(`is_open_right_slider`),
+    false,
+  )
   const isOpenPostSlider = useStorage(addPrefix(`is_open_post_slider`), false)
 
   /*******************************
@@ -121,7 +147,10 @@ export const useStore = defineStore(`store`, () => {
       title: `内容1`,
       content: DEFAULT_CONTENT,
       history: [
-        { datetime: new Date().toLocaleString(`zh-cn`), content: DEFAULT_CONTENT },
+        {
+          datetime: new Date().toLocaleString(`zh-cn`),
+          content: DEFAULT_CONTENT,
+        },
       ],
       createDatetime: new Date(),
       updateDatetime: new Date(),
@@ -160,13 +189,17 @@ export const useStore = defineStore(`store`, () => {
     })
 
     // 兼容：如果本地没有 currentPostId，或指向的文章已不存在
-    if (!currentPostId.value || !posts.value.some(p => p.id === currentPostId.value)) {
+    if (
+      !currentPostId.value
+      || !posts.value.some(p => p.id === currentPostId.value)
+    ) {
       currentPostId.value = posts.value[0]?.id ?? ``
     }
   })
 
   /** 根据 id 找索引 */
-  const findIndexById = (id: string) => posts.value.findIndex(p => p.id === id)
+  const findIndexById = (id: string) =>
+    posts.value.findIndex(p => p.id === id)
 
   /** computed: 让旧代码还能用 index，但底层映射 id */
   const currentPostIndex = computed<number>({
@@ -210,7 +243,8 @@ export const useStore = defineStore(`store`, () => {
     if (idx === -1)
       return
     posts.value.splice(idx, 1)
-    currentPostId.value = posts.value[Math.min(idx, posts.value.length - 1)]?.id ?? ``
+    currentPostId.value
+      = posts.value[Math.min(idx, posts.value.length - 1)]?.id ?? ``
   }
 
   const updatePostParentId = (postId: string, parentId: string | null) => {
@@ -341,7 +375,7 @@ export const useStore = defineStore(`store`, () => {
     theme: customCssWithTemplate(
       css2json(getCurrentTab().content),
       primaryColor.value,
-      customizeTheme(themeMap[theme.value], {
+      customizeTheme(resolveClassicTheme(theme.value), {
         fontSize: fontSizeNumber.value,
         color: primaryColor.value,
       }),
@@ -352,6 +386,7 @@ export const useStore = defineStore(`store`, () => {
     isUseJustify: isUseJustify.value,
     isMacCodeBlock: isMacCodeBlock.value,
     isShowLineNumber: isShowLineNumber.value,
+    gzhThemeId: gzhThemeIdOf(theme.value),
   })
 
   const readingTime = reactive({
@@ -361,14 +396,18 @@ export const useStore = defineStore(`store`, () => {
   })
 
   // 文章标题,用于生成目录
-  const titleList = ref<{
-    url: string
-    title: string
-    level: number
-  }[]>([])
+  const titleList = ref<
+    {
+      url: string
+      title: string
+      level: number
+    }[]
+  >([])
 
   // 名词解释（由正文内“专有名词”片段/行内代码自动解析生成，不支持手动增删）
-  const glossaryEntries = ref<{ id: number, label: string, value: string }[]>([])
+  const glossaryEntries = ref<{ id: number, label: string, value: string }[]>(
+    [],
+  )
   const syncingGlossary = ref(false)
   const authorName = ref(``)
   const reviewerName = ref(``)
@@ -379,7 +418,10 @@ export const useStore = defineStore(`store`, () => {
   ])
 
   // 从正文中提取“专有名词”（行内代码）作为名词解释来源（去重，按出现顺序）
-  const extractGlossariesFromRaw = (raw: string, prev: { id: number, label: string, value: string }[]) => {
+  const extractGlossariesFromRaw = (
+    raw: string,
+    prev: { id: number, label: string, value: string }[],
+  ) => {
     const results: { id: number, label: string, value: string }[] = []
     const seen = new Set<string>()
     const prevMap = new Map(prev.map(item => [item.label, item]))
@@ -395,7 +437,11 @@ export const useStore = defineStore(`store`, () => {
         continue
       seen.add(term)
       const prevItem = prevMap.get(term)
-      results.push({ id: Date.now() + results.length, label: term, value: prevItem?.value ?? `` })
+      results.push({
+        id: Date.now() + results.length,
+        label: term,
+        value: prevItem?.value ?? ``,
+      })
     }
     return results
   }
@@ -411,12 +457,16 @@ export const useStore = defineStore(`store`, () => {
       countStatus: isCountStatus.value,
       isMacCodeBlock: isMacCodeBlock.value,
       isShowLineNumber: isShowLineNumber.value,
+      gzhThemeId: gzhThemeIdOf(theme.value),
     })
 
     const raw = editor.value!.getValue()
 
     // 根据正文“专有名词”生成名词解释列表
-    const derivedGlossaries = extractGlossariesFromRaw(raw, glossaryEntries.value)
+    const derivedGlossaries = extractGlossariesFromRaw(
+      raw,
+      glossaryEntries.value,
+    )
     syncingGlossary.value = true
     glossaryEntries.value = derivedGlossaries
     nextTick(() => {
@@ -439,7 +489,8 @@ export const useStore = defineStore(`store`, () => {
         })
       }
       if (authorName.value) {
-        const authorPadding = validGlossaries.length > 0 ? `padding-top: 1em; ` : ``
+        const authorPadding
+          = validGlossaries.length > 0 ? `padding-top: 1em; ` : ``
         appendContent += `<p style="${authorPadding}font-size: 0.875em; color: rgba(0,0,0,0.55)"><strong style="color: var(--md-primary-color); font-weight: bold;">作者：</strong> ${authorName.value}</p>\n\n`
       }
       if (reviewerName.value) {
@@ -448,7 +499,9 @@ export const useStore = defineStore(`store`, () => {
     }
 
     // 添加参考文献
-    const validReferences = references.value.filter(ref => ref.content.trim() !== ``)
+    const validReferences = references.value.filter(
+      ref => ref.content.trim() !== ``,
+    )
     if (validReferences.length > 0) {
       if (!appendContent) {
         appendContent += `\n\n---\n\n`
@@ -461,7 +514,10 @@ export const useStore = defineStore(`store`, () => {
     }
 
     const contentToRender = raw + appendContent
-    const { html: baseHtml, readingTime: readingTimeResult } = renderMarkdown(contentToRender, renderer)
+    const { html: baseHtml, readingTime: readingTimeResult } = renderMarkdown(
+      contentToRender,
+      renderer,
+    )
     readingTime.chars = raw.length
     readingTime.words = readingTimeResult.words
     readingTime.minutes = Math.ceil(readingTimeResult.minutes)
@@ -492,7 +548,7 @@ export const useStore = defineStore(`store`, () => {
     const newTheme = customCssWithTemplate(
       json,
       primaryColor.value,
-      customizeTheme(themeMap[theme.value], {
+      customizeTheme(resolveClassicTheme(theme.value), {
         fontSize: fontSizeNumber.value,
         color: primaryColor.value,
       }),
@@ -505,9 +561,8 @@ export const useStore = defineStore(`store`, () => {
   }
   // 初始化 CSS 编辑器
   onMounted(() => {
-    const cssEditorDom = document.querySelector<HTMLTextAreaElement>(
-      `#cssEditor`,
-    )!
+    const cssEditorDom
+      = document.querySelector<HTMLTextAreaElement>(`#cssEditor`)!
     cssEditorDom.value = getCurrentTab().content
     const theme = isDark.value ? `darcula` : `xq-light`
     cssEditor.value = markRaw(
@@ -586,15 +641,15 @@ export const useStore = defineStore(`store`, () => {
   }
 
   // 为函数添加刷新编辑器的功能
-  const withAfterRefresh = (fn: (...rest: any[]) => void) => (
-    ...rest: any[]
-  ) => {
-    fn(...rest)
-    editorRefresh()
-  }
+  const withAfterRefresh
+    = (fn: (...rest: any[]) => void) =>
+      (...rest: any[]) => {
+        fn(...rest)
+        editorRefresh()
+      }
 
   const getTheme = (size: string, color: string) => {
-    const newTheme = themeMap[theme.value]
+    const newTheme = resolveClassicTheme(theme.value)
     const fontSize = Number(size.replace(`px`, ``))
     return customCssWithTemplate(
       css2json(getCurrentTab().content),
@@ -603,13 +658,22 @@ export const useStore = defineStore(`store`, () => {
     )
   }
 
-  const themeChanged = withAfterRefresh((newTheme: keyof typeof themeMap) => {
+  const themeChanged = withAfterRefresh((newTheme: ThemeId) => {
+    const gzhColor = getGzhPrimaryColor(newTheme)
+    if (gzhColor) {
+      primaryColor.value = gzhColor
+    }
+    const color = gzhColor ?? primaryColor.value
     renderer.setOptions({
       theme: customCssWithTemplate(
         css2json(getCurrentTab().content),
-        primaryColor.value,
-        customizeTheme(themeMap[newTheme], { fontSize: fontSizeNumber.value }),
+        color,
+        customizeTheme(resolveClassicTheme(newTheme), {
+          fontSize: fontSizeNumber.value,
+          color,
+        }),
       ),
+      gzhThemeId: gzhThemeIdOf(newTheme),
     })
     theme.value = newTheme
   })
@@ -695,7 +759,10 @@ export const useStore = defineStore(`store`, () => {
 
   // 导出编辑器内容为无样式 HTML
   const exportEditorContent2PureHTML = () => {
-    exportPureHTML(editor.value!.getValue(), posts.value[currentPostIndex.value].title)
+    exportPureHTML(
+      editor.value!.getValue(),
+      posts.value[currentPostIndex.value].title,
+    )
   }
 
   // 下载卡片
@@ -710,7 +777,11 @@ export const useStore = defineStore(`store`, () => {
       },
     })
 
-    downloadFile(url, `${sanitizeTitle(posts.value[currentPostIndex.value].title)}.png`, `image/png`)
+    downloadFile(
+      url,
+      `${sanitizeTitle(posts.value[currentPostIndex.value].title)}.png`,
+      `image/png`,
+    )
   }
 
   // 导出编辑器内容为 PDF
@@ -721,7 +792,10 @@ export const useStore = defineStore(`store`, () => {
 
   // 导出编辑器内容到本地
   const exportEditorContent2MD = () => {
-    downloadMD(editor.value!.getValue(), posts.value[currentPostIndex.value].title)
+    downloadMD(
+      editor.value!.getValue(),
+      posts.value[currentPostIndex.value].title,
+    )
   }
 
   // 导入默认文档

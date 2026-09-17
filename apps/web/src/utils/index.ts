@@ -61,19 +61,32 @@ function setStyles(element: Element) {
    * @param {排除的属性} excludes 如果某些属性对结果有不良影响，可以使用这个参数来排除
    * @returns 行内样式拼接结果
    */
-  function getElementStyles(element: Element, excludes = [`width`, `height`, `inlineSize`, `webkitLogicalWidth`, `webkitLogicalHeight`]) {
+  function getElementStyles(
+    element: Element,
+    excludes = [
+      `width`,
+      `height`,
+      `inlineSize`,
+      `webkitLogicalWidth`,
+      `webkitLogicalHeight`,
+    ],
+  ) {
     const styles = getComputedStyle(element, null)
     return Object.entries(styles)
-      .filter(
-        ([key]) => {
-          // 将驼峰转换为短横线格式
-          const kebabKey = key.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`)
-          return styles.getPropertyValue(kebabKey) && !excludes.includes(key)
-        },
-      )
+      .filter(([key]) => {
+        // 将驼峰转换为短横线格式
+        const kebabKey = key.replace(
+          /[A-Z]/g,
+          match => `-${match.toLowerCase()}`,
+        )
+        return styles.getPropertyValue(kebabKey) && !excludes.includes(key)
+      })
       .map(([key, value]) => {
         // 将驼峰转换为短横线格式
-        const kebabKey = key.replace(/[A-Z]/g, match => `-${match.toLowerCase()}`)
+        const kebabKey = key.replace(
+          /[A-Z]/g,
+          match => `-${match.toLowerCase()}`,
+        )
         return `${kebabKey}:${value};`
       })
       .join(``)
@@ -110,7 +123,7 @@ function setStyles(element: Element) {
     return (
       element.tagName === `SPAN`
       && (isCode(element.parentElement)
-        || isCode((element.parentElement!).parentElement))
+        || isCode(element.parentElement!.parentElement))
     )
   }
 }
@@ -144,9 +157,7 @@ export async function exportPureHTML(raw: string, title: string = `untitled`) {
 
   const markedInstance = new Marked()
   markedInstance.use(markedAlert({ withoutStyle: true }))
-  markedInstance.use(
-    MDKatex({ nonStandard: true }, ``, ``),
-  )
+  markedInstance.use(MDKatex({ nonStandard: true }, ``, ``))
   const pureHtml = await markedInstance.parse(raw)
 
   downloadFile(pureHtml, `${safeTitle}.html`, `text/html`)
@@ -277,17 +288,24 @@ function createEmptyNode(): HTMLElement {
   return node
 }
 
-export async function processClipboardContent(primaryColor: string) {
+export async function processClipboardContent(
+  primaryColor: string,
+  options: { skipHljs?: boolean } = {},
+) {
   const clipboardDiv = document.getElementById(`output`)!
 
   // 获取highlight.js样式并添加到HTML中
-  const hljsStyles = await getHljsStyles()
-  if (hljsStyles) {
-    clipboardDiv.innerHTML = hljsStyles + clipboardDiv.innerHTML
+  if (!options.skipHljs) {
+    const hljsStyles = await getHljsStyles()
+    if (hljsStyles) {
+      clipboardDiv.innerHTML = hljsStyles + clipboardDiv.innerHTML
+    }
   }
 
   // 先合并 CSS 和修改 HTML 结构
-  clipboardDiv.innerHTML = modifyHtmlStructure(mergeCss(clipboardDiv.innerHTML))
+  clipboardDiv.innerHTML = modifyHtmlStructure(
+    mergeCss(clipboardDiv.innerHTML),
+  )
 
   // 处理样式和颜色变量
   clipboardDiv.innerHTML = clipboardDiv.innerHTML

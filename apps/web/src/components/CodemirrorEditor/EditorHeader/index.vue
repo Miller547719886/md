@@ -1,8 +1,18 @@
 <script setup lang="ts">
 import { getDefaultMpProfile } from '@md/shared/configs'
+import { isGzhTheme } from '@md/shared/gzh'
 import { driver } from 'driver.js'
 import { ChevronDownIcon, Menu, Settings } from 'lucide-vue-next'
-import { computed, h, markRaw, nextTick, onMounted, onUnmounted, ref } from 'vue'
+import {
+  computed,
+  h,
+  markRaw,
+  nextTick,
+  onMounted,
+  onUnmounted,
+  ref,
+  watch,
+} from 'vue'
 import img01 from '@/assets/images/01.png'
 import img02 from '@/assets/images/02.png'
 import img03 from '@/assets/images/03.png'
@@ -19,7 +29,16 @@ const emit = defineEmits([`startCopy`, `endCopy`])
 
 const store = useStore()
 
-const { output, primaryColor, editor, glossaryEntries, authorName, reviewerName, references } = storeToRefs(store)
+const {
+  output,
+  primaryColor,
+  editor,
+  glossaryEntries,
+  authorName,
+  reviewerName,
+  references,
+  theme,
+} = storeToRefs(store)
 
 const { editorRefresh } = store
 const GUIDE_STORAGE_KEY = addPrefix(`usageGuideShown`)
@@ -46,13 +65,17 @@ const missingAppendixFields = computed(() => {
 
   // 参考文献：存在项且任意为空即视为缺失；若列表为空则不强制
   const hasReferenceItem = references.value.length > 0
-  const hasEmptyReference = references.value.some(item => !item.content.trim())
+  const hasEmptyReference = references.value.some(
+    item => !item.content.trim(),
+  )
   if (hasReferenceItem && hasEmptyReference)
     missing.push(`参考文献`)
 
   // 名词解释：仅当正文生成了名词解释时才校验释义
   const hasGlossary = glossaryEntries.value.length > 0
-  const hasEmptyGlossaryValue = glossaryEntries.value.some(item => !item.value.trim())
+  const hasEmptyGlossaryValue = glossaryEntries.value.some(
+    item => !item.value.trim(),
+  )
   if (hasGlossary && hasEmptyGlossaryValue)
     missing.push(`名词解释释义`)
 
@@ -139,6 +162,15 @@ onUnmounted(() => {
 
 const copyMode = useStorage(addPrefix(`copyMode`), `txt`)
 
+watch(
+  theme,
+  (id) => {
+    if (isGzhTheme(id))
+      copyMode.value = `txt`
+  },
+  { immediate: true },
+)
+
 const { copy: copyContent } = useClipboard({
   legacy: true,
 })
@@ -154,7 +186,9 @@ function buildMpCardHtml() {
     `data-signature="${profile.desc}"`,
     `data-service_type="1"`,
     `data-verify_status="1"`,
-  ].filter(Boolean).join(` `)
+  ]
+    .filter(Boolean)
+    .join(` `)
 
   return `<p style="text-align: center; font-size: 14px; margin: 1em 0 16px 0; color: rgba(0,0,0,0.55)">点击下方卡片关注我们,了解更多生涯资讯~</p>
 <section class="mp_profile_iframe_wrp custom_select_card_wrp" nodeleaf="">
@@ -172,14 +206,20 @@ async function copy() {
   if (copyMode.value === `md`) {
     const mdContent = editor.value?.getValue() || ``
     await copyContent(mdContent)
-    toast.custom(() => h(markRaw(CopyGuideToast), {
-      onGoPaste: () => {
-        window.open(`https://mp.weixin.qq.com/cgi-bin/appmsg`, `_blank`, `noreferrer`)
-      },
-      onOpenGuide: () => {
-        openCopyGuideDialog()
-      },
-    }))
+    toast.custom(() =>
+      h(markRaw(CopyGuideToast), {
+        onGoPaste: () => {
+          window.open(
+            `https://mp.weixin.qq.com/cgi-bin/appmsg`,
+            `_blank`,
+            `noreferrer`,
+          )
+        },
+        onOpenGuide: () => {
+          openCopyGuideDialog()
+        },
+      }),
+    )
     return
   }
 
@@ -188,7 +228,9 @@ async function copy() {
 
   setTimeout(() => {
     nextTick(async () => {
-      await processClipboardContent(primaryColor.value)
+      await processClipboardContent(primaryColor.value, {
+        skipHljs: isGzhTheme(theme.value),
+      })
       const clipboardDiv = document.getElementById(`output`)!
 
       // 自动添加生涯重塑公众号名片到文章尾部
@@ -223,14 +265,20 @@ async function copy() {
       }
 
       // 输出提示：已复制渲染内容，并提供“去粘贴”和“后续如何操作？”入口
-      toast.custom(() => h(markRaw(CopyGuideToast), {
-        onGoPaste: () => {
-          window.open(`https://mp.weixin.qq.com/cgi-bin/appmsg`, `_blank`, `noreferrer`)
-        },
-        onOpenGuide: () => {
-          openCopyGuideDialog()
-        },
-      }))
+      toast.custom(() =>
+        h(markRaw(CopyGuideToast), {
+          onGoPaste: () => {
+            window.open(
+              `https://mp.weixin.qq.com/cgi-bin/appmsg`,
+              `_blank`,
+              `noreferrer`,
+            )
+          },
+          onOpenGuide: () => {
+            openCopyGuideDialog()
+          },
+        }),
+      )
       window.dispatchEvent(
         new CustomEvent(`copyToMp`, {
           detail: {
@@ -366,7 +414,10 @@ function tryAutoGuide() {
           <EditDropdown />
         </span>
         <StyleDropdown />
-        <HelpDropdown @open-about="handleOpenAbout" @open-fund="handleOpenFund" />
+        <HelpDropdown
+          @open-about="handleOpenAbout"
+          @open-fund="handleOpenFund"
+        />
       </Menubar>
     </div>
 
@@ -380,13 +431,20 @@ function tryAutoGuide() {
             </Button>
           </MenubarTrigger>
           <MenubarContent align="start">
-            <FileDropdown :as-sub="true" @open-editor-state="handleOpenEditorState" />
+            <FileDropdown
+              :as-sub="true"
+              @open-editor-state="handleOpenEditorState"
+            />
             <FormatDropdown :as-sub="true" />
             <span class="edit-button inline-flex">
               <EditDropdown :as-sub="true" />
             </span>
             <StyleDropdown :as-sub="true" />
-            <HelpDropdown :as-sub="true" @open-about="handleOpenAbout" @open-fund="handleOpenFund" />
+            <HelpDropdown
+              :as-sub="true"
+              @open-about="handleOpenAbout"
+              @open-fund="handleOpenFund"
+            />
           </MenubarContent>
         </MenubarMenu>
       </Menubar>
@@ -395,11 +453,7 @@ function tryAutoGuide() {
     <!-- 右侧操作区 -->
     <div class="space-x-2 flex flex-wrap items-center">
       <!-- 使用向导按钮 -->
-      <Button
-        class="use-tutorial text-sm"
-        variant="outline"
-        @click="openGuide"
-      >
+      <Button class="use-tutorial text-sm" variant="outline" @click="openGuide">
         使用向导
       </Button>
 
@@ -408,7 +462,11 @@ function tryAutoGuide() {
         id="copy-actions"
         class="bg-background space-x-1 text-background-foreground flex items-center border rounded-md"
       >
-        <Button variant="ghost" class="shadow-none text-sm px-2 md:px-4" @click="handleCopyClick">
+        <Button
+          variant="ghost"
+          class="shadow-none text-sm px-2 md:px-4"
+          @click="handleCopyClick"
+        >
           复制
         </Button>
         <Separator orientation="vertical" class="h-5" />
@@ -452,20 +510,25 @@ function tryAutoGuide() {
   </header>
 
   <!-- 对话框组件，嵌套菜单无法正常挂载，需要提取层级 -->
-  <AboutDialog :visible="aboutDialogVisible" @close="aboutDialogVisible = false" />
+  <AboutDialog
+    :visible="aboutDialogVisible"
+    @close="aboutDialogVisible = false"
+  />
   <FundDialog :visible="fundDialogVisible" @close="fundDialogVisible = false" />
-  <EditorStateDialog :visible="editorStateDialogVisible" @close="editorStateDialogVisible = false" />
+  <EditorStateDialog
+    :visible="editorStateDialogVisible"
+    @close="editorStateDialogVisible = false"
+  />
   <AlertDialog v-model:open="copyAppendixDialogVisible">
     <AlertDialogContent>
       <AlertDialogHeader>
         <AlertDialogTitle>附录填写校验</AlertDialogTitle>
         <AlertDialogDescription>
-          <div
-            v-if="appendixWarningHtml"
-            v-html="appendixWarningHtml"
-          />
+          <div v-if="appendixWarningHtml" v-html="appendixWarningHtml" />
           <template v-else>
-            {{ appendixWarningText || '附录存在未填写的字段，确认是否继续复制？' }}
+            {{
+              appendixWarningText || "附录存在未填写的字段，确认是否继续复制？"
+            }}
           </template>
         </AlertDialogDescription>
       </AlertDialogHeader>
@@ -490,13 +553,21 @@ function tryAutoGuide() {
     >
       关闭
     </button>
-    <div class="flex h-full w-full flex-col items-center justify-center gap-4 px-4 pb-6 pt-8 sm:px-6">
-      <div class="relative h-full max-h-[70vh] w-full max-w-3xl overflow-hidden rounded-md bg-black/40">
+    <div
+      class="flex h-full w-full flex-col items-center justify-center gap-4 px-4 pb-6 pt-8 sm:px-6"
+    >
+      <div
+        class="relative h-full max-h-[70vh] w-full max-w-3xl overflow-hidden rounded-md bg-black/40"
+      >
         <div
           v-for="(src, index) in guideImages"
           :key="src"
           class="absolute inset-0 flex items-center justify-center transition-opacity duration-300"
-          :class="copyGuideActiveIndex === index ? 'opacity-100' : 'opacity-0 pointer-events-none'"
+          :class="
+            copyGuideActiveIndex === index
+              ? 'opacity-100'
+              : 'opacity-0 pointer-events-none'
+          "
         >
           <img
             :src="src"
@@ -505,7 +576,9 @@ function tryAutoGuide() {
           >
         </div>
       </div>
-      <div class="flex w-full max-w-3xl items-center justify-between text-white">
+      <div
+        class="flex w-full max-w-3xl items-center justify-between text-white"
+      >
         <button
           type="button"
           class="rounded border border-white/50 px-3 py-1 text-xs hover:bg-white/10"
@@ -518,7 +591,9 @@ function tryAutoGuide() {
             v-for="index in COPY_GUIDE_TOTAL"
             :key="index"
             class="h-2 w-2 rounded-full"
-            :class="copyGuideActiveIndex === index - 1 ? 'bg-primary' : 'bg-white/40'"
+            :class="
+              copyGuideActiveIndex === index - 1 ? 'bg-primary' : 'bg-white/40'
+            "
           />
         </div>
         <button
@@ -526,7 +601,9 @@ function tryAutoGuide() {
           class="rounded border border-white/50 px-3 py-1 text-xs hover:bg-white/10"
           @click="goNextGuide"
         >
-          {{ copyGuideActiveIndex === COPY_GUIDE_TOTAL - 1 ? '完成' : '下一张' }}
+          {{
+            copyGuideActiveIndex === COPY_GUIDE_TOTAL - 1 ? "完成" : "下一张"
+          }}
         </button>
       </div>
     </div>

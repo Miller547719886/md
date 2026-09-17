@@ -1,4 +1,10 @@
-import type { ExtendedProperties, IOpts, RendererAPI, ThemeStyles } from '@md/shared/types'
+import type { GzhCoverMeta, GzhH4Kind } from '@md/shared/gzh'
+import type {
+  ExtendedProperties,
+  IOpts,
+  RendererAPI,
+  ThemeStyles,
+} from '@md/shared/types'
 import type { PropertiesHyphen } from 'csstype'
 import type { RendererObject, Tokens } from 'marked'
 import type { ReadTimeResults } from 'reading-time'
@@ -8,7 +14,25 @@ import hljs from 'highlight.js'
 import { marked } from 'marked'
 import mermaid from 'mermaid'
 import readingTime from 'reading-time'
-import { markedAlert, markedFootnotes, markedPlantUML, markedRuby, markedSlider, markedToc, MDKatex } from '../extensions'
+import {
+  markedAlert,
+  markedFootnotes,
+  markedGzhMarks,
+  markedPlantUML,
+  markedRuby,
+  markedSlider,
+  markedToc,
+  MDKatex,
+} from '../extensions'
+import {
+  createGzhComponents,
+  getGzhComponents,
+  isLastChapterTitle,
+  parseH4Kind,
+  setGzhComponents,
+  splitChapterTitle,
+  wrapLeafText,
+} from '../gzh'
 import { getStyleString } from '../utils'
 
 marked.setOptions({
@@ -16,7 +40,13 @@ marked.setOptions({
 })
 marked.use(markedSlider())
 
-function buildTheme({ theme: _theme, fonts, size, isUseIndent, isUseJustify }: IOpts): ThemeStyles {
+function buildTheme({
+  theme: _theme,
+  fonts,
+  size,
+  isUseIndent,
+  isUseJustify,
+}: IOpts): ThemeStyles {
   const theme = cloneDeep(_theme)
   const base = toMerged(theme.base, {
     'font-family': fonts,
@@ -37,9 +67,14 @@ function buildTheme({ theme: _theme, fonts, size, isUseIndent, isUseJustify }: I
     }
   }
 
-  const mergeStyles = (styles: Record<string, PropertiesHyphen>): Record<string, ExtendedProperties> =>
+  const mergeStyles = (
+    styles: Record<string, PropertiesHyphen>,
+  ): Record<string, ExtendedProperties> =>
     Object.fromEntries(
-      Object.entries(styles).map(([ele, style]) => [ele, toMerged(base, style)]),
+      Object.entries(styles).map(([ele, style]) => [
+        ele,
+        toMerged(base, style),
+      ]),
     )
   return {
     ...mergeStyles(theme.inline),
@@ -76,7 +111,11 @@ function buildAddition(): string {
   `
 }
 
-function getStyles(styleMapping: ThemeStyles, tokenName: string, addition: string = ``): string {
+function getStyles(
+  styleMapping: ThemeStyles,
+  tokenName: string,
+  addition: string = ``,
+): string {
   const dict = styleMapping[tokenName as keyof ThemeStyles]
   if (!dict) {
     return ``
@@ -95,7 +134,11 @@ function buildFootnoteArray(footnotes: [number, string, string][]): string {
     .join(`\n`)
 }
 
-function transform(legend: string, text: string | null, title: string | null): string {
+function transform(
+  legend: string,
+  text: string | null,
+  title: string | null,
+): string {
   const options = legend.split(`-`)
   for (const option of options) {
     if (option === `alt` && text) {
@@ -156,16 +199,79 @@ export function initRenderer(opts: IOpts): RendererAPI {
   let h2Counter: number = 0
   let h3Counter: number = 0
   let h4Counter: number = 0
+  const h4KindCounters: Record<GzhH4Kind, number> = {
+    step: 0,
+    case: 0,
+    tool: 0,
+    skill: 0,
+    plain: 0,
+  }
+  let introConsumed = false
+  let yamlData: Record<string, any> = {}
+
+  function syncGzh() {
+    if (opts.gzhThemeId)
+      setGzhComponents(createGzhComponents(opts.gzhThemeId))
+    else setGzhComponents(null)
+  }
+
+  syncGzh()
 
   function getOpts(): IOpts {
     return opts
+  }
+
+  function resetH4KindCounters() {
+    h4KindCounters.step = 0
+    h4KindCounters.case = 0
+    h4KindCounters.tool = 0
+    h4KindCounters.skill = 0
+    h4KindCounters.plain = 0
+  }
+
+  function unwrapHtml(html: string): string {
+    return html.replace(/<\/?p[^>]*>/gi, ``).trim()
+  }
+
+  function asMetaString(value: unknown): string | undefined {
+    if (value == null || value === ``)
+      return undefined
+    if (value instanceof Date)
+      return value.toISOString().slice(0, 10)
+    return String(value)
+  }
+
+  function gzhCoverMeta(): GzhCoverMeta {
+    const nested
+      = yamlData.cover && typeof yamlData.cover === `object`
+        ? yamlData.cover
+        : {}
+    const src = { ...yamlData, ...nested }
+    return {
+      eyebrow: asMetaString(src.eyebrow),
+      date: asMetaString(src.date),
+      subtitle: asMetaString(src.subtitle),
+      author: asMetaString(src.author),
+      strike: asMetaString(src.strike),
+      highlight: asMetaString(src.highlight),
+    }
+  }
+
+  function parseDocument(markdownText: string): ParseResult {
+    const result = parseFrontMatterAndContent(markdownText)
+    yamlData = result.yamlData
+    return result
   }
 
   function styles(tag: string, addition: string = ``): string {
     return getStyles(styleMapping, tag, addition)
   }
 
-  function styledContent(styleLabel: string, content: string, tagName?: string): string {
+  function styledContent(
+    styleLabel: string,
+    content: string,
+    tagName?: string,
+  ): string {
     const tag = tagName ?? styleLabel
 
     return `<${tag} ${/^h\d$/.test(tag) ? `data-heading="true"` : ``} ${styles(styleLabel)}>${content}</${tag}>`
@@ -173,7 +279,9 @@ export function initRenderer(opts: IOpts): RendererAPI {
 
   function addFootnote(title: string, link: string): number {
     // 检查是否已经存在相同的链接
-    const existingFootnote = footnotes.find(([, , existingLink]) => existingLink === link)
+    const existingFootnote = footnotes.find(
+      ([, , existingLink]) => existingLink === link,
+    )
     if (existingFootnote) {
       return existingFootnote[0] // 返回已存在的脚注索引
     }
@@ -189,18 +297,24 @@ export function initRenderer(opts: IOpts): RendererAPI {
     h2Counter = 0
     h3Counter = 0
     h4Counter = 0
+    resetH4KindCounters()
+    introConsumed = false
     setOptions(newOpts)
   }
 
   function setOptions(newOpts: Partial<IOpts>): void {
     opts = { ...opts, ...newOpts }
+    syncGzh()
     const oldStyle = JSON.stringify(styleMapping)
     styleMapping = buildTheme(opts)
     const newStyle = JSON.stringify(styleMapping)
     if (oldStyle !== newStyle) {
       marked.use(markedAlert({ styles: styleMapping }))
       marked.use(
-        MDKatex({ nonStandard: true }, styles(`inline_katex`, `;line-height: 1;`), styles(`block_katex`, `;text-align: center;`),
+        MDKatex(
+          { nonStandard: true },
+          styles(`inline_katex`, `;line-height: 1;`),
+          styles(`block_katex`, `;text-align: center;`),
         ),
       )
     }
@@ -212,6 +326,12 @@ export function initRenderer(opts: IOpts): RendererAPI {
     }
     if (!readingTime.words) {
       return ``
+    }
+    const gzh = getGzhComponents()
+    if (gzh) {
+      return gzh.paragraph(
+        `全文共 ${readingTime?.words} 字，约需 ${Math.ceil(readingTime?.minutes)} 分钟完成阅读。`,
+      )
     }
     return `
       <blockquote ${styles(`blockquote`)}>
@@ -225,6 +345,11 @@ export function initRenderer(opts: IOpts): RendererAPI {
       return ``
     }
 
+    const gzh = getGzhComponents()
+    if (gzh) {
+      return gzh.h3(`引用链接`) + gzh.paragraph(buildFootnoteArray(footnotes))
+    }
+
     return (
       styledContent(`h4`, `引用链接`)
       + styledContent(`footnotes`, buildFootnoteArray(footnotes), `p`)
@@ -232,8 +357,42 @@ export function initRenderer(opts: IOpts): RendererAPI {
   }
 
   const renderer: RendererObject = {
-    heading({ tokens, depth }: Tokens.Heading) {
+    heading({ tokens, depth, text: rawText }: Tokens.Heading) {
       const text = this.parser.parseInline(tokens)
+      const gzh = getGzhComponents()
+      if (gzh) {
+        if (depth === 1) {
+          return gzh.h1(text, gzhCoverMeta())
+        }
+        if (depth === 2) {
+          h2Counter++
+          h3Counter = 0
+          h4Counter = 0
+          resetH4KindCounters()
+          const { title, english } = splitChapterTitle(rawText)
+          return gzh.chapter({
+            index: h2Counter,
+            title,
+            english,
+            isLast: isLastChapterTitle(title),
+            isFirst: h2Counter === 1,
+          })
+        }
+        if (depth === 3) {
+          return gzh.h3(text)
+        }
+        if (depth === 4) {
+          const { kind, title } = parseH4Kind(rawText)
+          h4KindCounters[kind]++
+          return gzh.h4(
+            kind === `plain` ? text : title,
+            kind,
+            h4KindCounters[kind],
+          )
+        }
+        return gzh.paragraph(text)
+      }
+
       const tag = `h${depth}`
 
       if (depth === 2) {
@@ -270,10 +429,23 @@ export function initRenderer(opts: IOpts): RendererAPI {
       if (isFigureImage || isEmpty) {
         return text
       }
+      const gzh = getGzhComponents()
+      if (gzh) {
+        return gzh.paragraph(text)
+      }
       return styledContent(`p`, text)
     },
 
     blockquote({ tokens }: Tokens.Blockquote): string {
+      const gzh = getGzhComponents()
+      if (gzh) {
+        const inner = unwrapHtml(this.parser.parse(tokens))
+        if (!introConsumed) {
+          introConsumed = true
+          return gzh.intro(inner, asMetaString(yamlData.author))
+        }
+        return gzh.quote(inner)
+      }
       let text = this.parser.parse(tokens)
       text = text.replace(/<p .*?>/g, `<p ${styles(`blockquote_p`)}>`)
       return styledContent(`blockquote`, text)
@@ -289,6 +461,12 @@ export function initRenderer(opts: IOpts): RendererAPI {
       }
       const langText = lang.split(` `)[0]
       const language = hljs.getLanguage(langText) ? langText : `plaintext`
+      const gzh = getGzhComponents()
+      if (gzh) {
+        const highlighted = hljs.highlight(text, { language }).value
+        const lines = highlighted.replace(/\r\n/g, `\n`).split(`\n`)
+        return gzh.codeBlock(lines, langText)
+      }
 
       let highlighted = ``
 
@@ -297,14 +475,27 @@ export function initRenderer(opts: IOpts): RendererAPI {
 
         const highlightedLines = rawLines.map((lineRaw) => {
           let lineHtml = hljs.highlight(lineRaw, { language }).value
-          lineHtml = lineHtml.replace(/(<span[^>]*>[^<]*<\/span>)(\s+)(<span[^>]*>[^<]*<\/span>)/g, (_, span1, spaces, span2) => span1 + span2.replace(/^(<span[^>]*>)/, `$1${spaces}`))
-          lineHtml = lineHtml.replace(/(\s+)(<span[^>]*>)/g, (_, spaces, span) => span.replace(/^(<span[^>]*>)/, `$1${spaces}`))
+          lineHtml = lineHtml.replace(
+            /(<span[^>]*>[^<]*<\/span>)(\s+)(<span[^>]*>[^<]*<\/span>)/g,
+            (_, span1, spaces, span2) =>
+              span1 + span2.replace(/^(<span[^>]*>)/, `$1${spaces}`),
+          )
+          lineHtml = lineHtml.replace(
+            /(\s+)(<span[^>]*>)/g,
+            (_, spaces, span) => span.replace(/^(<span[^>]*>)/, `$1${spaces}`),
+          )
           lineHtml = lineHtml.replace(/\t/g, `    `)
-          lineHtml = lineHtml.replace(/(>[^<]+)|(^[^<]+)/g, str => str.replace(/\s/g, `&nbsp;`))
+          lineHtml = lineHtml.replace(/(>[^<]+)|(^[^<]+)/g, str =>
+            str.replace(/\s/g, `&nbsp;`))
           return lineHtml === `` ? `&nbsp;` : lineHtml
         })
 
-        const lineNumbersHtml = highlightedLines.map((_, idx) => `<section style="padding:0 10px 0 0;line-height:1.75">${idx + 1}</section>`).join(``)
+        const lineNumbersHtml = highlightedLines
+          .map(
+            (_, idx) =>
+              `<section style="padding:0 10px 0 0;line-height:1.75">${idx + 1}</section>`,
+          )
+          .join(``)
         const codeInnerHtml = highlightedLines.join(`<br/>`)
         const codeLinesHtml = `<div style="white-space:pre;min-width:max-content;line-height:1.75">${codeInnerHtml}</div>`
         const lineNumberColumnStyles = `text-align:right;padding:8px 0;border-right:1px solid rgba(0,0,0,0.04);user-select:none;background:var(--code-bg,transparent);`
@@ -318,10 +509,20 @@ export function initRenderer(opts: IOpts): RendererAPI {
       }
       else {
         highlighted = hljs.highlight(text, { language }).value
-        highlighted = highlighted.replace(/(<span[^>]*>[^<]*<\/span>)(\s+)(<span[^>]*>[^<]*<\/span>)/g, (_, span1, spaces, span2) => span1 + span2.replace(/^(<span[^>]*>)/, `$1${spaces}`))
-        highlighted = highlighted.replace(/(\s+)(<span[^>]*>)/g, (_, spaces, span) => span.replace(/^(<span[^>]*>)/, `$1${spaces}`))
+        highlighted = highlighted.replace(
+          /(<span[^>]*>[^<]*<\/span>)(\s+)(<span[^>]*>[^<]*<\/span>)/g,
+          (_, span1, spaces, span2) =>
+            span1 + span2.replace(/^(<span[^>]*>)/, `$1${spaces}`),
+        )
+        highlighted = highlighted.replace(
+          /(\s+)(<span[^>]*>)/g,
+          (_, spaces, span) => span.replace(/^(<span[^>]*>)/, `$1${spaces}`),
+        )
         highlighted = highlighted.replace(/\t/g, `    `)
-        highlighted = highlighted.replace(/\r\n/g, `<br/>`).replace(/\n/g, `<br/>`).replace(/(>[^<]+)|(^[^<]+)/g, str => str.replace(/\s/g, `&nbsp;`))
+        highlighted = highlighted
+          .replace(/\r\n/g, `<br/>`)
+          .replace(/\n/g, `<br/>`)
+          .replace(/(>[^<]+)|(^[^<]+)/g, str => str.replace(/\s/g, `&nbsp;`))
       }
 
       const span = `<span class="mac-sign" style="padding: 10px 14px 0;">${macCodeSvg}</span>`
@@ -331,6 +532,10 @@ export function initRenderer(opts: IOpts): RendererAPI {
 
     codespan({ text }: Tokens.Codespan): string {
       const escapedText = escapeHtml(text)
+      const gzh = getGzhComponents()
+      if (gzh) {
+        return gzh.codespan(escapedText)
+      }
       return styledContent(`codespan`, escapedText, `code`)
     },
 
@@ -338,17 +543,16 @@ export function initRenderer(opts: IOpts): RendererAPI {
       listOrderedStack.push(ordered)
       listCounters.push(Number(start))
 
-      const html = items
-        .map(item => this.listitem(item))
-        .join(``)
+      const htmlItems = items.map(item => this.listitem(item))
 
       listOrderedStack.pop()
       listCounters.pop()
 
-      return styledContent(
-        ordered ? `ol` : `ul`,
-        html,
-      )
+      const gzh = getGzhComponents()
+      if (gzh) {
+        return gzh.list(ordered, htmlItems)
+      }
+      return styledContent(ordered ? `ol` : `ul`, htmlItems.join(``))
     },
 
     // 2. listitem：从栈顶取 ordered + counter，计算 prefix 并自增
@@ -360,9 +564,7 @@ export function initRenderer(opts: IOpts): RendererAPI {
       listCounters[listCounters.length - 1] = idx + 1
 
       // 使用纯文本前缀以避免复制到公众号时出现断行问题
-      const prefix = ordered
-        ? `${idx}. `
-        : `• `
+      const prefix = ordered ? `${idx}. ` : `• `
 
       // 渲染内容：优先 inline，fallback 去掉 <p> 包裹
       let content: string
@@ -375,15 +577,24 @@ export function initRenderer(opts: IOpts): RendererAPI {
           .replace(/^<p(?:\s[^>]*)?>([\s\S]*?)<\/p>/, `$1`)
       }
 
-      return styledContent(
-        `listitem`,
-        `${prefix}${content}`,
-        `li`,
-      )
+      const gzh = getGzhComponents()
+      if (gzh) {
+        return unwrapHtml(content)
+      }
+      return styledContent(`listitem`, `${prefix}${content}`, `li`)
     },
 
     image({ href, title, text }: Tokens.Image): string {
-      const subText = styledContent(`figcaption`, transform(opts.legend!, text, title))
+      const gzh = getGzhComponents()
+      if (gzh) {
+        const caption = transform(opts.legend!, text, title)
+        const isGif = /\.gif(?:\?|#|$)/i.test(href)
+        return gzh.image(href, caption, isGif)
+      }
+      const subText = styledContent(
+        `figcaption`,
+        transform(opts.legend!, text, title),
+      )
       const figureStyles = styles(`figure`)
       const imgStyles = styles(`image`)
       return `<figure ${figureStyles}><img ${imgStyles} src="${href}" title="${title}" alt="${text}"/>${subText}</figure>`
@@ -391,6 +602,20 @@ export function initRenderer(opts: IOpts): RendererAPI {
 
     link({ href, title, text, tokens }: Tokens.Link): string {
       const parsedText = this.parser.parseInline(tokens)
+      const gzh = getGzhComponents()
+      if (gzh) {
+        if (/^https?:\/\/mp\.weixin\.qq\.com/.test(href)) {
+          return `<a href="${href}" title="${title || text}">${parsedText}</a>`
+        }
+        if (href === text) {
+          return parsedText
+        }
+        if (opts.citeStatus) {
+          const ref = addFootnote(title || text, href)
+          return `${gzh.link(href, parsedText, title || undefined)}<sup>[${ref}]</sup>`
+        }
+        return gzh.link(href, parsedText, title || undefined)
+      }
       if (/^https?:\/\/mp\.weixin\.qq\.com/.test(href)) {
         return `<a href="${href}" title="${title || text}" ${styles(`wx_link`)}>${parsedText}</a>`
       }
@@ -405,14 +630,38 @@ export function initRenderer(opts: IOpts): RendererAPI {
     },
 
     strong({ tokens }: Tokens.Strong): string {
-      return styledContent(`strong`, this.parser.parseInline(tokens))
+      const inner = this.parser.parseInline(tokens)
+      const gzh = getGzhComponents()
+      if (gzh) {
+        return gzh.strong(inner)
+      }
+      return styledContent(`strong`, inner)
     },
 
     em({ tokens }: Tokens.Em): string {
       return styledContent(`em`, this.parser.parseInline(tokens), `span`)
     },
 
+    del({ tokens }: Tokens.Del): string {
+      const inner = this.parser.parseInline(tokens)
+      const gzh = getGzhComponents()
+      if (gzh) {
+        return gzh.strike(inner)
+      }
+      return `<del>${inner}</del>`
+    },
+
     table({ header, rows }: Tokens.Table): string {
+      const gzh = getGzhComponents()
+      if (gzh) {
+        const headerCells = header.map(cell =>
+          this.parser.parseInline(cell.tokens),
+        )
+        const bodyRows = rows.map(row =>
+          row.map(cell => this.parser.parseInline(cell.tokens)),
+        )
+        return gzh.table(headerCells, bodyRows)
+      }
       const headerRow = header
         .map((cell) => {
           const text = this.parser.parseInline(cell.tokens)
@@ -421,9 +670,7 @@ export function initRenderer(opts: IOpts): RendererAPI {
         .join(``)
       const body = rows
         .map((row) => {
-          const rowContent = row
-            .map(cell => this.tablecell(cell))
-            .join(``)
+          const rowContent = row.map(cell => this.tablecell(cell)).join(``)
           return styledContent(`tr`, rowContent)
         })
         .join(``)
@@ -443,22 +690,32 @@ export function initRenderer(opts: IOpts): RendererAPI {
     },
 
     hr(_: Tokens.Hr): string {
+      const gzh = getGzhComponents()
+      if (gzh) {
+        return gzh.hr()
+      }
       return styledContent(`hr`, ``)
     },
   }
 
   marked.use({ renderer })
+  marked.use(markedGzhMarks())
   marked.use(markedToc())
   marked.use(markedSlider({ styles: styleMapping }))
   marked.use(markedAlert({ styles: styleMapping }))
   marked.use(
-    MDKatex({ nonStandard: true }, styles(`inline_katex`, `;line-height: 1;`), styles(`block_katex`, `;text-align: center;`),
+    MDKatex(
+      { nonStandard: true },
+      styles(`inline_katex`, `;line-height: 1;`),
+      styles(`block_katex`, `;text-align: center;`),
     ),
   )
   marked.use(markedFootnotes())
-  marked.use(markedPlantUML({
-    inlineSvg: true, // 启用SVG内嵌，适用于微信公众号
-  }))
+  marked.use(
+    markedPlantUML({
+      inlineSvg: true, // 启用SVG内嵌，适用于微信公众号
+    }),
+  )
   marked.use(markedRuby())
 
   return {
@@ -466,9 +723,15 @@ export function initRenderer(opts: IOpts): RendererAPI {
     buildFootnotes,
     setOptions,
     reset,
-    parseFrontMatterAndContent,
+    parseFrontMatterAndContent: parseDocument,
     buildReadingTime,
     createContainer(content: string) {
+      const gzh = getGzhComponents()
+      if (gzh) {
+        const author
+          = asMetaString(yamlData.author) || asMetaString(yamlData.cover?.author)
+        return wrapLeafText(gzh.container(`${content}${gzh.footer(author)}`))
+      }
       return styledContent(`container`, content, `section`)
     },
     getOpts,

@@ -195,11 +195,13 @@ const codeBlockThemeList = [
   `xt256`,
 ]
 
-export const codeBlockThemeOptions: IConfigOption[] = codeBlockThemeList.map(codeBlockTheme => ({
-  label: codeBlockTheme,
-  value: `${codeBlockUrlPrefix}${codeBlockTheme}.min.css`,
-  desc: ``,
-}))
+export const codeBlockThemeOptions: IConfigOption[] = codeBlockThemeList.map(
+  codeBlockTheme => ({
+    label: codeBlockTheme,
+    value: `${codeBlockUrlPrefix}${codeBlockTheme}.min.css`,
+    desc: ``,
+  }),
+)
 
 export const legendOptions: IConfigOption[] = [
   {
@@ -237,8 +239,8 @@ export const defaultStyleConfig = {
   isCountStatus: true,
   theme: themeOptions[0].value,
   fontFamily: fontFamilyOptions[0].value,
-  fontSize: fontSizeOptions[0].value,
-  primaryColor: colorOptions[0].value,
+  fontSize: fontSizeOptions[1].value,
+  primaryColor: `#4A5D52`,
   codeBlockTheme: codeBlockThemeOptions[23].value,
   legend: legendOptions[0].value,
 }

@@ -1,5 +1,6 @@
 import type { AlertOptions, AlertVariantItem } from '@md/shared/types'
 import type { MarkedExtension, Tokens } from 'marked'
+import { getGzhComponents } from '../gzh/context'
 import { getStyleString, ucfirst } from '../utils'
 
 /**
@@ -8,11 +9,19 @@ import { getStyleString, ucfirst } from '../utils'
  * A [marked](https://marked.js.org/) extension to support [GFM alerts](https://github.com/orgs/community/discussions/16925).
  */
 export function markedAlert(options: AlertOptions = {}): MarkedExtension {
-  const { className = `markdown-alert`, variants = [], withoutStyle = false } = options
+  const {
+    className = `markdown-alert`,
+    variants = [],
+    withoutStyle = false,
+  } = options
   const resolvedVariants = resolveVariants(variants)
 
   // 提取公共的元数据构建逻辑
-  function buildMeta(variantType: string, matchedVariant: AlertVariantItem, fromContainer = false) {
+  function buildMeta(
+    variantType: string,
+    matchedVariant: AlertVariantItem,
+    fromContainer = false,
+  ) {
     const { styles } = options
     return {
       className,
@@ -41,7 +50,15 @@ export function markedAlert(options: AlertOptions = {}): MarkedExtension {
     const { meta, tokens = [] } = token
     // @ts-expect-error marked renderer context has parser property
     let text = this.parser.parse(tokens)
-    text = text.replace(/<p .*?>/g, `<p style="${getStyleString(meta.contentStyle)}">`)
+    const gzh = getGzhComponents()
+    if (gzh) {
+      text = text.replace(/<\/?p[^>]*>/g, ``)
+      return gzh.tip(text, meta.variant, meta.title)
+    }
+    text = text.replace(
+      /<p .*?>/g,
+      `<p style="${getStyleString(meta.contentStyle)}">`,
+    )
     let tmpl = `<blockquote class="${meta.className} ${meta.className}-${meta.variant}" style="${getStyleString(meta.wrapperStyle)}">\n`
     tmpl += `<p class="${meta.titleClassName}" style="${getStyleString(meta.titleStyle)}">`
     if (!withoutStyle) {
@@ -114,7 +131,9 @@ export function markedAlert(options: AlertOptions = {}): MarkedExtension {
 
           if (match) {
             const [raw, variant, content] = match
-            const matchedVariant = resolvedVariants.find(v => v.type === variant)
+            const matchedVariant = resolvedVariants.find(
+              v => v.type === variant,
+            )
             if (!matchedVariant)
               return
 

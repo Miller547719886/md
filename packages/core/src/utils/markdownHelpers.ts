@@ -3,6 +3,16 @@ import type { ReadTimeResults } from 'reading-time'
 import DOMPurify from 'isomorphic-dompurify'
 import { marked } from 'marked'
 
+const purifyConfig = {
+  ADD_TAGS: [`mp-common-profile`],
+  ADD_ATTR: [`leaf`, `nodeleaf`],
+  USE_PROFILES: { html: true, svg: true },
+}
+
+function sanitizeHtml(html: string): string {
+  return DOMPurify.sanitize(html, purifyConfig)
+}
+
 /**
  * 渲染 Markdown 内容
  * @param raw - 原始 markdown 字符串
@@ -18,7 +28,7 @@ export function renderMarkdown(raw: string, renderer: RendererAPI) {
   let html = marked.parse(markdownContent) as string
 
   // XSS 处理
-  html = DOMPurify.sanitize(html, { ADD_TAGS: [`mp-common-profile`] })
+  html = sanitizeHtml(html)
 
   return { html, readingTime }
 }
@@ -30,24 +40,32 @@ export function renderMarkdown(raw: string, renderer: RendererAPI) {
  * @param renderer - 渲染器 API
  * @returns 处理后的 HTML 字符串
  */
-export function postProcessHtml(baseHtml: string, reading: ReadTimeResults, renderer: RendererAPI): string {
+export function postProcessHtml(
+  baseHtml: string,
+  reading: ReadTimeResults,
+  renderer: RendererAPI,
+): string {
+  const isGzh = !!renderer.getOpts().gzhThemeId
   // 阅读时间及字数统计
   let html = baseHtml
   html = renderer.buildReadingTime(reading) + html
-  // 去除第一行的 margin-top
-  html = html.replace(/(style=".*?)"/, `$1;margin-top: 0"`)
+  if (!isGzh) {
+    // 去除第一行的 margin-top
+    html = html.replace(/(style=".*?)"/, `$1;margin-top: 0"`)
+  }
   // 引用脚注
   html += renderer.buildFootnotes()
-  // 附加的一些 style
-  html += renderer.buildAddition()
-  html += `
+  if (!isGzh) {
+    // 附加的一些 style
+    html += renderer.buildAddition()
+    html += `
     <style>
       .hljs.code__pre > .mac-sign {
         display: ${renderer.getOpts().isMacCodeBlock ? `flex` : `none`};
       }
     </style>
   `
-  html += `
+    html += `
     <style>
       .code__pre {
         padding: 0 !important;
@@ -64,6 +82,7 @@ export function postProcessHtml(baseHtml: string, reading: ReadTimeResults, rend
       }
     </style>
   `
+  }
   // 包裹 HTML
   return renderer.createContainer(html)
 }
@@ -74,15 +93,14 @@ export function postProcessHtml(baseHtml: string, reading: ReadTimeResults, rend
  * @param renderer - 渲染器 API
  * @returns 修改后的 HTML 字符串
  */
-export function modifyHtmlContent(content: string, renderer: RendererAPI): string {
-  const {
-    markdownContent,
-    readingTime: readingTimeResult,
-  } = renderer.parseFrontMatterAndContent(content)
+export function modifyHtmlContent(
+  content: string,
+  renderer: RendererAPI,
+): string {
+  const { markdownContent, readingTime: readingTimeResult }
+    = renderer.parseFrontMatterAndContent(content)
 
   let html = marked.parse(markdownContent) as string
-  html = DOMPurify.sanitize(html, {
-    ADD_TAGS: [`mp-common-profile`],
-  })
+  html = sanitizeHtml(html)
   return postProcessHtml(html, readingTimeResult, renderer)
 }
