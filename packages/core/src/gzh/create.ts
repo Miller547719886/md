@@ -155,8 +155,7 @@ function zen(t: GzhTokens): GzhComponents {
     hr() {
       return `<section style="padding:0 ${t.padX};"><section style="height:1px;background:${t.line};margin:64px 0 0;">${deco()}</section></section>`
     },
-    footer(author) {
-      const name = author || `作者`
+    footer() {
       return `<section style="padding:0 ${t.padX};">
         <section style="text-align:center;margin:48px 0 40px;">
           <section style="display:flex;align-items:center;justify-content:center;">
@@ -167,7 +166,6 @@ function zen(t: GzhTokens): GzhComponents {
         </section>
       </section>
       <section style="padding:0 ${t.padX} 40px;">
-        <p style="margin-bottom:26px;font-size:15px;line-height:1.9;text-align:justify;color:${t.body};">我是 ${name}。</p>
         <p style="margin-bottom:26px;font-size:15px;line-height:1.9;text-align:justify;color:${t.body};">如果你觉得今天这篇有收获，欢迎<strong style="color:${t.primary};">点赞、在看、转发</strong>三连，我们下篇见。</p>
       </section>`
     },

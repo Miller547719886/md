@@ -479,9 +479,9 @@ export const useStore = defineStore(`store`, () => {
     // 添加名词解释、作者和审核信息
     const validGlossaries = derivedGlossaries
     if (validGlossaries.length > 0 || authorName.value || reviewerName.value) {
-      appendContent += `\n\n---\n\n`
+      appendContent += `\n\n`
       if (validGlossaries.length > 0) {
-        appendContent += `<p style="font-size: 0.875em; color: rgba(0,0,0,0.55)"><strong style="color: var(--md-primary-color); font-weight: bold;">名词解释：</strong></p>`
+        appendContent += `<p style="padding-top: 1em; font-size: 0.875em; color: rgba(0,0,0,0.55)"><strong style="color: var(--md-primary-color); font-weight: bold;">名词解释：</strong></p>`
         validGlossaries.forEach((item, idx) => {
           const label = item.label.trim()
           const value = item.value.trim()
@@ -489,9 +489,7 @@ export const useStore = defineStore(`store`, () => {
         })
       }
       if (authorName.value) {
-        const authorPadding
-          = validGlossaries.length > 0 ? `padding-top: 1em; ` : ``
-        appendContent += `<p style="${authorPadding}font-size: 0.875em; color: rgba(0,0,0,0.55)"><strong style="color: var(--md-primary-color); font-weight: bold;">作者：</strong> ${authorName.value}</p>\n\n`
+        appendContent += `<p style="padding-top: 1em; font-size: 0.875em; color: rgba(0,0,0,0.55)"><strong style="color: var(--md-primary-color); font-weight: bold;">作者：</strong> ${authorName.value}</p>\n\n`
       }
       if (reviewerName.value) {
         appendContent += `<p style="font-size: 0.875em; padding-top: 1em; color: rgba(0,0,0,0.55)"><strong style="color: var(--md-primary-color); font-weight: bold;">审核：</strong> ${reviewerName.value}</p>\n\n`

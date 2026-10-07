@@ -90,6 +90,6 @@ export interface GzhComponents {
   listitem: (index: number, ordered: boolean, content: string) => string
   table: (header: string[], rows: string[][]) => string
   hr: () => string
-  footer: (author?: string) => string
+  footer: () => string
   link: (href: string, html: string, title?: string) => string
 }

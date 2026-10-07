@@ -728,9 +728,7 @@ export function initRenderer(opts: IOpts): RendererAPI {
     createContainer(content: string) {
       const gzh = getGzhComponents()
       if (gzh) {
-        const author
-          = asMetaString(yamlData.author) || asMetaString(yamlData.cover?.author)
-        return wrapLeafText(gzh.container(`${content}${gzh.footer(author)}`))
+        return wrapLeafText(gzh.container(`${content}${gzh.footer()}`))
       }
       return styledContent(`container`, content, `section`)
     },
