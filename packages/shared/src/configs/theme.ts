@@ -9,6 +9,7 @@ const defaultTheme: Theme = {
     '--md-primary-color': `#000000`,
     'text-align': `left`,
     'line-height': `1.75`,
+    'font-weight': 400,
   },
   block: {
     container: {},
@@ -21,7 +22,7 @@ const defaultTheme: Theme = {
       'margin': `2em auto 1em`,
       'color': `var(--md-primary-color)`,
       'font-size': `1.2em`,
-      'font-weight': `bold`,
+      'font-weight': 700,
       'text-align': `center`,
     },
 
@@ -34,7 +35,7 @@ const defaultTheme: Theme = {
       'border-bottom': `2px solid var(--md-primary-color)`,
       'font-size': `1.2em`,
       'line-height': `2`,
-      'font-weight': `bold`,
+      'font-weight': 700,
       'text-align': `center`,
     },
 
@@ -45,7 +46,7 @@ const defaultTheme: Theme = {
       'margin': `2em 8px 0.75em 0`,
       'color': `var(--md-primary-color)`,
       'font-size': `1.1em`,
-      'font-weight': `bold`,
+      'font-weight': 700,
       'line-height': `1.2`,
     },
 
@@ -54,7 +55,7 @@ const defaultTheme: Theme = {
       'margin': `2em 8px 0.5em`,
       'color': `var(--md-primary-color)`,
       'font-size': `1em`,
-      'font-weight': `bold`,
+      'font-weight': 700,
     },
 
     // 五级标题
@@ -62,7 +63,7 @@ const defaultTheme: Theme = {
       'margin': `1.5em 8px 0.5em`,
       'color': `var(--md-primary-color)`,
       'font-size': `1em`,
-      'font-weight': `bold`,
+      'font-weight': 700,
     },
 
     // 六级标题
@@ -70,6 +71,7 @@ const defaultTheme: Theme = {
       'margin': `1.5em 8px 0.5em`,
       'font-size': `1em`,
       'color': `var(--md-primary-color)`,
+      'font-weight': 700,
     },
 
     // 段落
@@ -259,7 +261,7 @@ const defaultTheme: Theme = {
     // 字体加粗样式
     strong: {
       'color': `var(--md-primary-color)`,
-      'font-weight': `bold`,
+      'font-weight': 700,
       'font-size': `inherit`,
     },
 
@@ -271,7 +273,7 @@ const defaultTheme: Theme = {
     },
 
     thead: {
-      'font-weight': `bold`,
+      'font-weight': 700,
       'color': `hsl(var(--foreground))`,
     },
 
@@ -281,6 +283,7 @@ const defaultTheme: Theme = {
       'color': `hsl(var(--foreground))`,
       'word-break': `keep-all`,
       'background': `rgba(0, 0, 0, 0.05)`,
+      'font-weight': 700,
     },
 
     td: {

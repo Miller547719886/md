@@ -478,7 +478,7 @@ export const useStore = defineStore(`store`, () => {
     if (validGlossaries.length > 0 || authorName.value || reviewerName.value) {
       appendContent += `\n\n`
       if (validGlossaries.length > 0) {
-        appendContent += `<span style="font-size: 0.875em; color: rgba(0,0,0,0.55)"><strong style="color: var(--md-primary-color); font-weight: bold;">名词解释：</strong></span>\n\n`
+        appendContent += `<span style="font-size: 0.875em; color: rgba(0,0,0,0.55)"><strong style="color: var(--md-primary-color); font-weight: 700;">名词解释：</strong></span>\n\n`
         validGlossaries.forEach((item, idx) => {
           const label = item.label.trim()
           const value = item.value.trim()
@@ -486,10 +486,10 @@ export const useStore = defineStore(`store`, () => {
         })
       }
       if (authorName.value) {
-        appendContent += `<span style="font-size: 0.875em; color: rgba(0,0,0,0.55)"><strong style="color: var(--md-primary-color); font-weight: bold;">作者：</strong> ${authorName.value}</span>\n\n`
+        appendContent += `<span style="font-size: 0.875em; color: rgba(0,0,0,0.55)"><strong style="color: var(--md-primary-color); font-weight: 700;">作者：</strong> ${authorName.value}</span>\n\n`
       }
       if (reviewerName.value) {
-        appendContent += `<span style="font-size: 0.875em; color: rgba(0,0,0,0.55)"><strong style="color: var(--md-primary-color); font-weight: bold;">审核：</strong> ${reviewerName.value}</span>\n\n`
+        appendContent += `<span style="font-size: 0.875em; color: rgba(0,0,0,0.55)"><strong style="color: var(--md-primary-color); font-weight: 700;">审核：</strong> ${reviewerName.value}</span>\n\n`
       }
     }
 
@@ -501,7 +501,7 @@ export const useStore = defineStore(`store`, () => {
       if (!appendContent) {
         appendContent += `\n\n---\n\n`
       }
-      appendContent += `<span style="font-size: 0.875em; word-break: break-all;"><strong style="color: var(--md-primary-color); font-weight: bold;">参考文献：</strong></span>\n\n`
+      appendContent += `<span style="font-size: 0.875em; word-break: break-all;"><strong style="color: var(--md-primary-color); font-weight: 700;">参考文献：</strong></span>\n\n`
       validReferences.forEach((ref, index) => {
         appendContent += `<span style="font-size: 0.875em; color: rgba(0,0,0,0.55); word-break: break-all;">【${index + 1}】${ref.content.trim()}</span>\n\n`
       })

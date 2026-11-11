@@ -17,13 +17,13 @@ import { deco, defaultChapterEnglish, pad2 } from './helpers'
 
 function base(t: GzhTokens, layout: GzhThemeId): GzhComponents {
   const container = (inner: string) =>
-    `<section style="max-width:${t.maxWidth};margin:0 auto;background:${t.bg};font-family:${t.titleFont};color:${t.body};line-height:${t.lineHeight};letter-spacing:${t.letterSpacing};overflow-x:hidden;">${inner}</section>`
+    `<section style="max-width:${t.maxWidth};margin:0 auto;background:${t.bg};font-family:${t.titleFont};font-weight:400;color:${t.body};line-height:${t.lineHeight};letter-spacing:${t.letterSpacing};overflow-x:hidden;">${inner}</section>`
 
   const paragraph = (html: string) =>
-    `<p style="margin:0 0 26px;font-size:${t.fontSize};line-height:${t.lineHeight};text-align:justify;color:${t.body};padding:0 ${t.padX};">${html}</p>`
+    `<p style="margin:0 0 26px;font-size:${t.fontSize};font-weight:400;line-height:${t.lineHeight};text-align:justify;color:${t.body};padding:0 ${t.padX};">${html}</p>`
 
   const strong = (html: string) =>
-    `<strong style="color:${t.title};">${html}</strong>`
+    `<strong style="color:${t.title};font-weight:700;">${html}</strong>`
 
   const highlight = (html: string) =>
     `<span style="background:${t.highlightBg};color:${t.primaryDeep};padding:2px 6px;border-radius:2px;font-weight:600;">${html}</span>`
@@ -167,7 +167,7 @@ function zen(t: GzhTokens): GzhComponents {
         </section>
       </section>
       <section style="padding:0 ${t.padX} 40px;">
-        <p style="margin-bottom:26px;font-size:15px;line-height:1.9;text-align:justify;color:${t.body};">如果你觉得今天这篇有收获，欢迎<strong style="color:${t.primary};">点赞、在看、转发</strong>三连，我们下篇见。</p>
+        <p style="margin-bottom:26px;font-size:15px;line-height:1.9;text-align:justify;color:${t.body};">如果你觉得今天这篇有收获，欢迎<strong style="color:${t.primary};font-weight:700;">点赞、在看、转发</strong>三连，我们下篇见。</p>
       </section>`
     },
   }
@@ -206,7 +206,7 @@ function moyuGreen(t: GzhTokens): GzhComponents {
     },
     intro(html) {
       return `<section style="background:#FFF;border:1px dashed ${t.primaryLight};border-radius:8px;padding:14px 16px;margin:0 ${t.padX} 24px;text-align:center;">
-        <p style="margin:0;line-height:1.6;"><span style="font-size:15px;color:${t.primary};font-weight:bold;border-bottom:3px solid ${t.accent};padding-bottom:2px;">${html}</span></p>
+        <p style="margin:0;line-height:1.6;"><span style="font-size:15px;color:${t.primary};font-weight:700;border-bottom:3px solid ${t.accent};padding-bottom:2px;">${html}</span></p>
       </section>`
     },
     toc(items) {
@@ -263,7 +263,7 @@ function moyuGreen(t: GzhTokens): GzhComponents {
     footer() {
       const icons = ctaIcons()
       return `<section style="background:radial-gradient(circle at center,#F9FAFB 0%,#FFFFFF 100%);border:1px solid ${t.line};border-radius:16px;padding:32px 20px;text-align:center;margin:0 0 24px;">
-        <p style="font-size:13px;font-weight:bold;color:${t.title};margin-bottom:20px;">既然看到这里了，如果觉得有用，随手点个赞、在看、转发三连吧。</p>
+        <p style="font-size:13px;font-weight:700;color:${t.title};margin-bottom:20px;">既然看到这里了，如果觉得有用，随手点个赞、在看、转发三连吧。</p>
         <section style="display:flex;justify-content:center;gap:24px;margin-bottom:16px;">
           <section style="text-align:center;color:${t.body};"><section style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;margin:0 auto 6px;background:#fff;border-radius:12px;border:1px solid ${t.faint};">${icons.like}</section><span style="font-size:10px;font-weight:600;">点赞</span></section>
           <section style="text-align:center;color:${t.body};"><section style="width:40px;height:40px;display:flex;align-items:center;justify-content:center;margin:0 auto 6px;background:#fff;border-radius:12px;border:1px solid ${t.faint};">${icons.view}</section><span style="font-size:10px;font-weight:600;">在看</span></section>
@@ -424,7 +424,7 @@ function ticket(t: GzhTokens): GzhComponents {
       const rows = items
         .map(
           item =>
-            `<p style="margin:0 0 8px;font-size:13px;color:${t.title};"><strong>${item.isLast ? `///` : pad2(item.index)}</strong> ${item.title}</p>`,
+            `<p style="margin:0 0 8px;font-size:13px;color:${t.title};"><strong style="font-weight:700;">${item.isLast ? `///` : pad2(item.index)}</strong> ${item.title}</p>`,
         )
         .join(``)
       return `<section style="margin:0 ${t.padX} 24px;border:2px solid ${t.line};box-shadow:3px 3px 0 ${t.line};padding:16px;background:${t.paper};">${rows}</section>`
