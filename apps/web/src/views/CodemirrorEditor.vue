@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { Editor } from 'codemirror'
-import type { ComponentPublicInstance } from 'vue'
 import { getDefaultMpProfile } from '@md/shared/configs'
 import imageCompression from 'browser-image-compression'
 import { fromTextArea } from 'codemirror'
@@ -297,6 +296,10 @@ function beforeUpload(file: File) {
 
 interface UploadExtra {
   title?: string
+  bookmark?: {
+    find: () => { line: number, ch: number } | undefined
+    clear: () => void
+  }
 }
 
 // 图片上传结束
@@ -316,8 +319,11 @@ function uploaded(imageUrl: string, options?: UploadExtra) {
   const cm = toRaw(store.editor!)
   const content = cm.getValue()
   // shortcut: 仅处理主选区，多光标插图需逐个合并重叠的换行范围时再扩展。
-  const from = cm.indexFromPos(cm.getCursor(`from`))
-  const to = cm.indexFromPos(cm.getCursor(`to`))
+  const bookmarkPosition = options?.bookmark?.find()
+  const from = cm.indexFromPos(bookmarkPosition || cm.getCursor(`from`))
+  const to = bookmarkPosition
+    ? from
+    : cm.indexFromPos(cm.getCursor(`to`))
   const before = content.slice(0, from).replace(/(?:\n[ \t]*)+$/, ``)
   const after = content.slice(to).replace(/^(?:[ \t]*\n)+/, ``)
   const beforeSpacing = before ? `\n\n` : ``
@@ -330,6 +336,10 @@ function uploaded(imageUrl: string, options?: UploadExtra) {
   cm.setCursor(cm.posFromIndex(
     before.length + beforeSpacing.length + markdownImage.length + afterSpacing.length,
   ))
+  if (options?.bookmark) {
+    options.bookmark.clear()
+    options.bookmark = cm.setBookmark(cm.getCursor())
+  }
   toast.success(`图片上传成功`)
 }
 
@@ -452,39 +462,126 @@ async function uploadMdImg({
   editor.value!.setValue(md.str)
 }
 
-const codeMirrorWrapper = useTemplateRef<ComponentPublicInstance<HTMLDivElement>>(`codeMirrorWrapper`)
+// 自动上传拖入的图片，并将 Markdown 中的本地图片转为线上图片
+let editorDropTarget: HTMLElement | undefined
 
-// 转换 markdown 中的本地图片为线上图片
-// todo 处理事件覆盖
 function mdLocalToRemote() {
-  const dom = codeMirrorWrapper.value!
+  const cm = toRaw(store.editor!)
+  editorDropTarget = cm.getWrapperElement()
+  editorDropTarget.addEventListener(`dragover`, handleEditorDragOver, true)
+  editorDropTarget.addEventListener(`drop`, handleEditorDrop, true)
+}
 
-  dom.ondragover = evt => evt.preventDefault()
-  dom.ondrop = async (evt) => {
+function handleEditorDragOver(evt: DragEvent) {
+  if (evt.dataTransfer && (
+    evt.dataTransfer.files.length > 0
+    || Array.from(evt.dataTransfer.items).some(item => item.kind === `file`)
+  )) {
     evt.preventDefault()
-    if (evt.dataTransfer == null || !Array.isArray(evt.dataTransfer.items)) {
+  }
+}
+
+function isDroppedImage(file: File) {
+  return file.type.startsWith(`image/`)
+    || /\.(?:gif|jpe?g|png|webp|bmp|svg|avif|heic|tiff?)$/i.test(file.name)
+}
+
+function handleEditorDrop(evt: DragEvent) {
+  const transfer = evt.dataTransfer
+  if (!transfer) {
+    return
+  }
+
+  const items = Array.from(transfer.items).filter(item => item.kind === `file`)
+  const files = Array.from(transfer.files)
+  const imageFiles = files.filter(isDroppedImage)
+  if (imageFiles.length === 0) {
+    imageFiles.push(...items
+      .map(item => item.getAsFile())
+      .filter((file): file is File => file != null && isDroppedImage(file)))
+  }
+  if (items.length === 0 && files.length === 0) {
+    return
+  }
+
+  evt.preventDefault()
+
+  if (imageFiles.length > 0) {
+    evt.stopImmediatePropagation()
+    if (isImgLoading.value) {
+      toast.error(`图片正在上传，请稍后再试`)
       return
     }
 
-    for (const item of evt.dataTransfer.items.filter(item => item.kind === `file`)) {
-      item
-        .getAsFileSystemHandle()
-        .then(async (handle: { kind: string, getFile: () => any }) => {
-          if (handle.kind === `directory`) {
-            const list = (await showFileStructure(handle)) as {
-              path: string
-              file: File
-            }[]
-            const md = await getMd({ list })
-            uploadMdImg({ md, list })
-          }
-          else {
-            const file = await handle.getFile()
-            console.log(`file`, file)
-            beforeUpload(file) && uploadImage(file)
-          }
-        })
+    const cm = toRaw(store.editor!)
+    const uploadOptions: UploadExtra = {
+      bookmark: cm.setBookmark(cm.coordsChar(
+        { left: evt.clientX, top: evt.clientY },
+        `window`,
+      )),
     }
+
+    void (async () => {
+      try {
+        for (const file of imageFiles) {
+          if (!beforeUpload(file)) {
+            continue
+          }
+          await uploadImage(file, undefined, false, uploadOptions)
+        }
+      }
+      finally {
+        uploadOptions.bookmark?.clear()
+      }
+    })()
+    return
+  }
+
+  if (items.length === 0) {
+    for (const file of files) {
+      if (beforeUpload(file)) {
+        void uploadImage(file)
+      }
+    }
+    return
+  }
+
+  for (const item of items) {
+    const getHandle = (item as DataTransferItem & {
+      getAsFileSystemHandle?: () => Promise<{
+        kind: string
+        getFile?: () => Promise<File>
+      } | null>
+    }).getAsFileSystemHandle
+
+    if (!getHandle) {
+      const file = item.getAsFile()
+      if (file && beforeUpload(file)) {
+        void uploadImage(file)
+      }
+      continue
+    }
+
+    void getHandle.call(item).then(async (handle) => {
+      if (handle?.kind === `directory`) {
+        const list = (await showFileStructure(handle)) as {
+          path: string
+          file: File
+        }[]
+        const md = await getMd({ list })
+        uploadMdImg({ md, list })
+      }
+      else {
+        const file = handle?.getFile
+          ? await handle.getFile()
+          : item.getAsFile()
+        if (file && beforeUpload(file)) {
+          void uploadImage(file)
+        }
+      }
+    }).catch((err) => {
+      console.error(err)
+    })
   }
 }
 
@@ -610,6 +707,8 @@ onUnmounted(() => {
   clearTimeout(historyTimer.value)
   clearTimeout(timeout.value)
   clearTimeout(changeTimer.value)
+  editorDropTarget?.removeEventListener(`dragover`, handleEditorDragOver, true)
+  editorDropTarget?.removeEventListener(`drop`, handleEditorDrop, true)
 
   // 清理全局事件监听器 - 防止全局事件触发已销毁的组件
   document.removeEventListener(`keydown`, handleGlobalKeydown)
@@ -640,7 +739,6 @@ onUnmounted(() => {
           <ResizablePanel class="flex">
             <div
               v-show="!store.isMobile || (store.isMobile && showEditor)"
-              ref="codeMirrorWrapper"
               class="codeMirror-wrapper relative flex-1"
               :class="{
                 'order-1 border-l': !store.isEditOnLeft,
