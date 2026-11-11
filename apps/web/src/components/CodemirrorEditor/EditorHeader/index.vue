@@ -285,15 +285,6 @@ function openGuide() {
     doneBtnText: `完成`,
     steps: [
       {
-        element: `.style-theme`,
-        popover: {
-          title: `主题选择`,
-          description: `在这里选择你喜欢的主题`,
-          side: `bottom`,
-          align: `start`,
-        },
-      },
-      {
         element: `.editor-main`,
         popover: {
           title: `正文编辑区`,
@@ -309,6 +300,15 @@ function openGuide() {
           description: `点击这里查看完整 Markdown 教程。`,
           side: `bottom`,
           align: `start`,
+        },
+      },
+      {
+        element: `.tips-marquee`,
+        popover: {
+          title: `快捷键速查`,
+          description: `鼠标悬浮在这个区域，可以速览全部快捷键。`,
+          side: `top`,
+          align: `center`,
         },
       },
       {
