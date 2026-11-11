@@ -1,6 +1,7 @@
 import type { ThemeId } from '../gzh'
 import type { IConfigOption, Theme } from '../types'
 import { toMerged } from 'es-toolkit'
+import { systemMonospaceFontFamily } from '../font-families'
 import { gzhThemeOptions } from '../gzh'
 
 const defaultTheme: Theme = {
@@ -169,7 +170,7 @@ const defaultTheme: Theme = {
       'margin': 0,
       'white-space': `nowrap`,
       'font-size': `90%`,
-      'font-family': `Menlo, Operator Mono, Consolas, Monaco, monospace`,
+      'font-family': systemMonospaceFontFamily,
     },
 
     // 图片
@@ -367,7 +368,7 @@ const graceTheme = toMerged(defaultTheme, {
     },
 
     'code': {
-      'font-family': `'Fira Code', Menlo, Operator Mono, Consolas, Monaco, monospace`,
+      'font-family': systemMonospaceFontFamily,
     },
 
     'image': {
@@ -542,7 +543,7 @@ const simpleTheme = toMerged(defaultTheme, {
     },
 
     code: {
-      'font-family': `'Fira Code', Menlo, Operator Mono, Consolas, Monaco, monospace`,
+      'font-family': systemMonospaceFontFamily,
     },
 
     image: {

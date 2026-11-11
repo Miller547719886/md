@@ -2,6 +2,7 @@ import type { ThemeId } from '@md/shared/gzh'
 import { initRenderer } from '@md/core'
 import {
   defaultStyleConfig,
+  migrateFontFamily,
   resolveClassicTheme,
   widthOptions,
 } from '@md/shared/configs'
@@ -109,6 +110,7 @@ export const useStore = defineStore(`store`, () => {
   const gzhThemeIdOf = (id: ThemeId) => (isGzhTheme(id) ? id : null)
   // 文本字体
   const fontFamily = useStorage(`fonts`, defaultStyleConfig.fontFamily)
+  fontFamily.value = migrateFontFamily(fontFamily.value)
   // 文本大小
   const fontSize = useStorage(`size`, defaultStyleConfig.fontSize)
   // 主色

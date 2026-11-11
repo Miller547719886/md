@@ -1,8 +1,11 @@
 import type { GzhThemeId, GzhTokens } from './types'
+import {
+  systemSansFontFamily,
+  systemSerifFontFamily,
+} from '../font-families'
 
-const sans = `-apple-system,BlinkMacSystemFont,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif`
-const serif = `'Noto Serif SC',Georgia,'Times New Roman',serif`
-const plex = `'IBM Plex Sans',-apple-system,system-ui,'PingFang SC','Hiragino Sans GB','Microsoft YaHei',sans-serif`
+const sans = systemSansFontFamily
+const serif = systemSerifFontFamily
 
 export const gzhTokens: Record<GzhThemeId, GzhTokens> = {
   zenWhitespace: {
@@ -163,8 +166,8 @@ export const gzhTokens: Record<GzhThemeId, GzhTokens> = {
     letterSpacing: `0.2px`,
     maxWidth: `677px`,
     padX: `8px`,
-    fontFamily: plex,
-    titleFont: plex,
+    fontFamily: sans,
+    titleFont: sans,
     underlineCss: `border-bottom:2px solid #ed7b2f;font-weight:600;color:#23251d;`,
   },
 }

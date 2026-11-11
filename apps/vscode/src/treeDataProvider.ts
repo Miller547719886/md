@@ -4,6 +4,7 @@ import {
   colorOptions,
   fontFamilyOptions,
   fontSizeOptions,
+  migrateFontFamily,
   themeOptions,
 } from './styleChoices'
 
@@ -35,10 +36,17 @@ export class MarkdownTreeDataProvider implements vscode.TreeDataProvider<vscode.
       `markdownPreview.primaryColor`,
       colorOptions[0].value,
     )
-    this.currentFontFamily = this.context.workspaceState.get(
+    const storedFontFamily = this.context.workspaceState.get(
       `markdownPreview.fontFamily`,
       fontFamilyOptions[0].value,
     )
+    this.currentFontFamily = migrateFontFamily(storedFontFamily)
+    if (this.currentFontFamily !== storedFontFamily) {
+      this.context.workspaceState.update(
+        `markdownPreview.fontFamily`,
+        this.currentFontFamily,
+      )
+    }
     this.countStatus = this.context.workspaceState.get(
       `markdownPreview.countStatus`,
       false,

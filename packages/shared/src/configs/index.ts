@@ -1,3 +1,4 @@
+export * from '../font-families'
 export * from '../gzh'
 export * from './ai-services'
 export * from './api'

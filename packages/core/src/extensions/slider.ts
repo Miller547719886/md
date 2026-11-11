@@ -1,5 +1,6 @@
 import type { ThemeStyles } from '@md/shared/types'
 import type { MarkedExtension, Tokens } from 'marked'
+import { systemSansFontFamily } from '@md/shared/configs'
 import { getStyleString } from '../utils'
 
 /**
@@ -52,7 +53,7 @@ export function markedSlider(options: { styles?: ThemeStyles } = {}): MarkedExte
 
           return `
             <section style="box-sizing: border-box; font-size: 16px;">
-              <section data-role="outer" style="font-family: 微软雅黑; font-size: 16px;">
+              <section data-role="outer" style="font-family: ${systemSansFontFamily}; font-size: 16px;">
                 <section data-role="paragraph" style="margin: 0px auto; box-sizing: border-box; width: 100%;">
                   <section style="margin: 0px auto; text-align: center;">
                     <section style="display: inline-block; width: 100%;">

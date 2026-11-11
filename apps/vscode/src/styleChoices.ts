@@ -1,4 +1,12 @@
-import { codeBlockThemeOptions, colorOptions, fontFamilyOptions, fontSizeOptions, legendOptions, themeOptions } from '@md/shared/configs'
+import {
+  codeBlockThemeOptions,
+  colorOptions,
+  fontFamilyOptions,
+  fontSizeOptions,
+  legendOptions,
+  migrateFontFamily,
+  themeOptions,
+} from '@md/shared/configs'
 
 export {
   codeBlockThemeOptions,
@@ -6,5 +14,6 @@ export {
   fontFamilyOptions,
   fontSizeOptions,
   legendOptions,
+  migrateFontFamily,
   themeOptions,
 }

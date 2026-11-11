@@ -1,23 +1,39 @@
 import type { IConfigOption } from '../types'
+import {
+  systemMonospaceFontFamily,
+  systemSansFontFamily,
+  systemSerifFontFamily,
+} from '../font-families'
 import { themeOptions } from './theme'
 
 export const fontFamilyOptions: IConfigOption[] = [
   {
     label: `衬线`,
-    value: `Optima-Regular, Optima, PingFangSC-light, PingFangTC-light, 'PingFang SC', Cambria, Cochin, Georgia, Times, 'Times New Roman', serif`,
+    value: systemSerifFontFamily,
     desc: `字体123Abc`,
   },
   {
     label: `无衬线`,
-    value: `-apple-system-font,BlinkMacSystemFont, Helvetica Neue, PingFang SC, Hiragino Sans GB , Microsoft YaHei UI , Microsoft YaHei ,Arial,sans-serif`,
+    value: systemSansFontFamily,
     desc: `字体123Abc`,
   },
   {
     label: `等宽`,
-    value: `Menlo, Monaco, 'Courier New', monospace`,
+    value: systemMonospaceFontFamily,
     desc: `字体123Abc`,
   },
 ]
+
+const legacyFontFamilyOptions = [
+  `Optima-Regular, Optima, PingFangSC-light, PingFangTC-light, 'PingFang SC', Cambria, Cochin, Georgia, Times, 'Times New Roman', serif`,
+  `-apple-system-font,BlinkMacSystemFont, Helvetica Neue, PingFang SC, Hiragino Sans GB , Microsoft YaHei UI , Microsoft YaHei ,Arial,sans-serif`,
+  `Menlo, Monaco, 'Courier New', monospace`,
+]
+
+export function migrateFontFamily(fontFamily: string): string {
+  const index = legacyFontFamilyOptions.indexOf(fontFamily)
+  return index === -1 ? fontFamily : fontFamilyOptions[index].value
+}
 
 export const fontSizeOptions: IConfigOption[] = [
   {
