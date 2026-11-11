@@ -18,7 +18,7 @@ import {
 import { SearchTab } from '@/components/ui/search-tab'
 import { checkImage, toBase64 } from '@/utils'
 import { createExtraKeys } from '@/utils/editor'
-import { fileUpload } from '@/utils/file'
+import { DEFAULT_IMG_HOST, fileUpload } from '@/utils/file'
 
 const store = useStore()
 const displayStore = useDisplayStore()
@@ -281,7 +281,7 @@ function beforeUpload(file: File) {
   }
 
   // check image host
-  const imgHost = localStorage.getItem(`imgHost`) || `default`
+  const imgHost = localStorage.getItem(`imgHost`) || DEFAULT_IMG_HOST
   localStorage.setItem(`imgHost`, imgHost)
 
   const config = localStorage.getItem(`${imgHost}Config`)

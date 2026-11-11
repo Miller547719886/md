@@ -12,6 +12,9 @@ import * as qiniu from 'qiniu-js'
 import OSS from 'tiny-oss'
 import { v4 as uuidv4 } from 'uuid'
 
+// 未选择图床时使用私有化部署预置的腾讯云 COS 图床。
+export const DEFAULT_IMG_HOST = `txCOS`
+
 function getConfig(useDefault: boolean, platform: string) {
   if (useDefault) {
     // load default config file
@@ -602,10 +605,8 @@ async function formCustomUpload(content: string, file: File) {
 }
 
 export function fileUpload(content: string, file: File) {
-  const imgHost = localStorage.getItem(`imgHost`)
-  if (!imgHost) {
-    localStorage.setItem(`imgHost`, `default`)
-  }
+  const imgHost = localStorage.getItem(`imgHost`) || DEFAULT_IMG_HOST
+  localStorage.setItem(`imgHost`, imgHost)
   switch (imgHost) {
     case `aliOSS`:
       return aliOSSFileUpload(file)

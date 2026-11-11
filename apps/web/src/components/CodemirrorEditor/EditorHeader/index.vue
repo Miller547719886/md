@@ -297,7 +297,7 @@ function openGuide() {
         element: `.codeMirror-wrapper .CodeMirror`,
         popover: {
           title: `图片拖放上传`,
-          description: `将 JPG/JPEG、PNG 或 GIF 图片（每张不超过 10 MB）拖到这里，编辑器会使用当前图床自动上传，并在拖放位置插入 Markdown 图片语法（![](图片链接)）。多张图片会依次处理。`,
+          description: `将 JPG/JPEG、PNG 或 GIF 图片（每张不超过 10 MB）拖到这里，编辑器会使用当前图床自动上传；未选择图床时默认使用腾讯云 COS，并在拖放位置插入 Markdown 图片语法（![](图片链接)）。多张图片会依次处理。`,
           side: `right`,
           align: `start`,
         },

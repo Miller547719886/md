@@ -6,6 +6,7 @@ import { Field, Form } from 'vee-validate'
 import * as yup from 'yup'
 import { useDisplayStore } from '@/stores'
 import { checkImage } from '@/utils'
+import { DEFAULT_IMG_HOST } from '@/utils/file'
 
 const emit = defineEmits([`uploadImage`])
 
@@ -362,7 +363,7 @@ const options = [
   },
 ]
 
-const imgHost = ref(`txCOS`)
+const imgHost = ref(DEFAULT_IMG_HOST)
 const useCompression = ref(false)
 const activeName = ref(`upload`)
 const imageTitle = ref(``)
@@ -382,8 +383,8 @@ onBeforeMount(() => {
 
   // 若尚未选择图床，则默认切换到腾讯云 COS
   if (!localStorage.getItem(`imgHost`)) {
-    localStorage.setItem(`imgHost`, `txCOS`)
-    imgHost.value = `txCOS`
+    localStorage.setItem(`imgHost`, DEFAULT_IMG_HOST)
+    imgHost.value = DEFAULT_IMG_HOST
   }
 
   if (localStorage.getItem(`imgHost`)) {
@@ -416,7 +417,7 @@ function beforeImageUpload(file: File) {
   }
   // check image host
   let imgHost = localStorage.getItem(`imgHost`)
-  imgHost = imgHost || `txCOS`
+  imgHost = imgHost || DEFAULT_IMG_HOST
   localStorage.setItem(`imgHost`, imgHost)
 
   const config = localStorage.getItem(`${imgHost}Config`)
