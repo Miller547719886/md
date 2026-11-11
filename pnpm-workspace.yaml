@@ -1,3 +1,16 @@
 packages:
   - 'apps/*'
   - 'packages/*'
+allowBuilds:
+  '@parcel/watcher': true
+  '@tailwindcss/oxide': true
+  '@vscode/vsce-sign': true
+  core-js: true
+  cos-js-sdk-v5: true
+  esbuild: true
+  keytar: true
+  sharp: true
+  simple-git-hooks: true
+  spawn-sync: true
+  vue-demi: true
+  workerd: true

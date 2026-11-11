@@ -45,18 +45,8 @@
         }
       },
       {
-        "command": "markdown.setFontFamily",
-        "title": "Set Font Family",
-        "category": "Markdown Preview"
-      },
-      {
         "command": "markdown.toggleCountStatus",
         "title": "Toggle Count Status",
-        "category": "Markdown Preview"
-      },
-      {
-        "command": "markdown.toggleMacCodeBlock",
-        "title": "Toggle Mac Code Block",
         "category": "Markdown Preview"
       }
     ],

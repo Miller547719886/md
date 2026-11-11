@@ -105,6 +105,7 @@ export const useStore = defineStore(`store`, () => {
     addPrefix(`theme`),
     defaultStyleConfig.theme,
   )
+  theme.value = defaultStyleConfig.theme
   const gzhThemeIdOf = (id: ThemeId) => (isGzhTheme(id) ? id : null)
   // 文本字体
   const fontFamily = useStorage(`fonts`, defaultStyleConfig.fontFamily)
@@ -117,6 +118,7 @@ export const useStore = defineStore(`store`, () => {
     `codeBlockTheme`,
     defaultStyleConfig.codeBlockTheme,
   )
+  codeBlockTheme.value = defaultStyleConfig.codeBlockTheme
   // 图注格式
   const legend = useStorage(`legend`, defaultStyleConfig.legend)
 
@@ -288,13 +290,6 @@ export const useStore = defineStore(`store`, () => {
       editorContent.value = DEFAULT_CONTENT
     }
   })
-
-  // 格式化文档
-  const formatContent = async () => {
-    const doc = await formatDoc(editor.value!.getValue())
-    posts.value[currentPostIndex.value].content = doc
-    toRaw(editor.value!).setValue(doc)
-  }
 
   // 切换 highlight.js 代码主题
   const codeThemeChange = () => {
@@ -481,18 +476,18 @@ export const useStore = defineStore(`store`, () => {
     if (validGlossaries.length > 0 || authorName.value || reviewerName.value) {
       appendContent += `\n\n`
       if (validGlossaries.length > 0) {
-        appendContent += `<p style="padding-top: 1em; font-size: 0.875em; color: rgba(0,0,0,0.55)"><strong style="color: var(--md-primary-color); font-weight: bold;">名词解释：</strong></p>`
+        appendContent += `<span style="font-size: 0.875em; color: rgba(0,0,0,0.55)"><strong style="color: var(--md-primary-color); font-weight: bold;">名词解释：</strong></span>\n\n`
         validGlossaries.forEach((item, idx) => {
           const label = item.label.trim()
           const value = item.value.trim()
-          appendContent += `<p style="font-size: 0.875em; padding-top: 1em; color: rgba(0,0,0,0.55); word-break: break-all;">【${idx + 1}】${label ? `${label}：` : ``}${value}</p>`
+          appendContent += `<span style="font-size: 0.875em; color: rgba(0,0,0,0.55); word-break: break-all;">【${idx + 1}】${label ? `${label}：` : ``}${value}</span>\n\n`
         })
       }
       if (authorName.value) {
-        appendContent += `<p style="padding-top: 1em; font-size: 0.875em; color: rgba(0,0,0,0.55)"><strong style="color: var(--md-primary-color); font-weight: bold;">作者：</strong> ${authorName.value}</p>\n\n`
+        appendContent += `<span style="font-size: 0.875em; color: rgba(0,0,0,0.55)"><strong style="color: var(--md-primary-color); font-weight: bold;">作者：</strong> ${authorName.value}</span>\n\n`
       }
       if (reviewerName.value) {
-        appendContent += `<p style="font-size: 0.875em; padding-top: 1em; color: rgba(0,0,0,0.55)"><strong style="color: var(--md-primary-color); font-weight: bold;">审核：</strong> ${reviewerName.value}</p>\n\n`
+        appendContent += `<span style="font-size: 0.875em; color: rgba(0,0,0,0.55)"><strong style="color: var(--md-primary-color); font-weight: bold;">审核：</strong> ${reviewerName.value}</span>\n\n`
       }
     }
 
@@ -504,10 +499,9 @@ export const useStore = defineStore(`store`, () => {
       if (!appendContent) {
         appendContent += `\n\n---\n\n`
       }
-      appendContent += `<p style="font-size: 0.875em; padding-top: 1em; word-break: break-all;"><strong style="color: var(--md-primary-color); font-weight: bold;">参考文献：</strong>`
-      appendContent += `</p>`
+      appendContent += `<span style="font-size: 0.875em; word-break: break-all;"><strong style="color: var(--md-primary-color); font-weight: bold;">参考文献：</strong></span>\n\n`
       validReferences.forEach((ref, index) => {
-        appendContent += `<p style="font-size: 0.875em; padding-top: 1em; color: rgba(0,0,0,0.55); word-break: break-all;">【${index + 1}】${ref.content.trim()}</p>`
+        appendContent += `<span style="font-size: 0.875em; color: rgba(0,0,0,0.55); word-break: break-all;">【${index + 1}】${ref.content.trim()}</span>\n\n`
       })
     }
 
@@ -538,6 +532,15 @@ export const useStore = defineStore(`store`, () => {
       i++
     }
     output.value = div.innerHTML
+  }
+
+  // 格式化文档并同步检测自动目录
+  const formatContent = async () => {
+    const doc = await formatDoc(editor.value!.getValue())
+    posts.value[currentPostIndex.value].content = doc
+    toRaw(editor.value!).setValue(doc)
+    editorRefresh()
+    return output.value.includes(`data-auto-toc="true"`)
   }
 
   // 更新 CSS
@@ -943,8 +946,7 @@ export const useStore = defineStore(`store`, () => {
 
 export const useDisplayStore = defineStore(`display`, () => {
   // 是否展示 CSS 编辑器
-  const isShowCssEditor = useStorage(`isShowCssEditor`, false)
-  const toggleShowCssEditor = useToggle(isShowCssEditor)
+  const isShowCssEditor = ref(false)
 
   // 是否展示插入表格对话框
   const isShowInsertFormDialog = ref(false)
@@ -966,7 +968,6 @@ export const useDisplayStore = defineStore(`display`, () => {
 
   return {
     isShowCssEditor,
-    toggleShowCssEditor,
     isShowInsertFormDialog,
     toggleShowInsertFormDialog,
     isShowInsertMpCardDialog,

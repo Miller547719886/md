@@ -38,6 +38,7 @@ export interface GzhTokens {
   letterSpacing: string
   maxWidth: string
   padX: string
+  /** @deprecated Generated content now uses titleFont; kept as a compatibility alias. */
   fontFamily: string
   titleFont: string
   underlineCss: string

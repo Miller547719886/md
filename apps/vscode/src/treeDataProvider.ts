@@ -29,10 +29,8 @@ export class MarkdownTreeDataProvider implements vscode.TreeDataProvider<vscode.
       `markdownPreview.fontSize`,
       fontSizeOptions[0].value,
     )
-    this.currentTheme = this.context.workspaceState.get(
-      `markdownPreview.theme`,
-      themeOptions[0].value,
-    )
+    this.currentTheme = themeOptions[0].value
+    this.context.workspaceState.update(`markdownPreview.theme`, this.currentTheme)
     this.currentPrimaryColor = this.context.workspaceState.get(
       `markdownPreview.primaryColor`,
       colorOptions[0].value,
@@ -82,18 +80,7 @@ export class MarkdownTreeDataProvider implements vscode.TreeDataProvider<vscode.
     if (!element) {
       return Promise.resolve(
         [
-          new vscode.TreeItem(`字号`, vscode.TreeItemCollapsibleState.Expanded),
-          new vscode.TreeItem(`字体`, vscode.TreeItemCollapsibleState.Expanded),
-          new vscode.TreeItem(`主题`, vscode.TreeItemCollapsibleState.Expanded),
-          new vscode.TreeItem(
-            `主题色`,
-            vscode.TreeItemCollapsibleState.Expanded,
-          ),
           new vscode.TreeItem(`计数状态`, vscode.TreeItemCollapsibleState.None),
-          new vscode.TreeItem(
-            `Mac代码块`,
-            vscode.TreeItemCollapsibleState.None,
-          ),
         ].map((item) => {
           if (item.label === `计数状态`) {
             item.command = {

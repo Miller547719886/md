@@ -599,10 +599,9 @@ export const classicThemeOptions: IConfigOption<keyof typeof themeMap>[] = [
   },
 ]
 
-export const themeOptions: IConfigOption<ThemeId>[] = [
-  ...gzhThemeOptions,
-  ...classicThemeOptions,
-]
+export const themeOptions: IConfigOption<ThemeId>[] = gzhThemeOptions.filter(
+  ({ value }) => value === `zenWhitespace`,
+)
 
 export function resolveClassicTheme(id: ThemeId): Theme {
   if (id === `grace` || id === `simple` || id === `default`)

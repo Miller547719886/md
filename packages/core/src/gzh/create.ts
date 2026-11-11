@@ -17,7 +17,7 @@ import { deco, defaultChapterEnglish, pad2 } from './helpers'
 
 function base(t: GzhTokens, layout: GzhThemeId): GzhComponents {
   const container = (inner: string) =>
-    `<section style="max-width:${t.maxWidth};margin:0 auto;background:${t.bg};font-family:${t.fontFamily};color:${t.body};line-height:${t.lineHeight};letter-spacing:${t.letterSpacing};overflow-x:hidden;">${inner}</section>`
+    `<section style="max-width:${t.maxWidth};margin:0 auto;background:${t.bg};font-family:${t.titleFont};color:${t.body};line-height:${t.lineHeight};letter-spacing:${t.letterSpacing};overflow-x:hidden;">${inner}</section>`
 
   const paragraph = (html: string) =>
     `<p style="margin:0 0 26px;font-size:${t.fontSize};line-height:${t.lineHeight};text-align:justify;color:${t.body};padding:0 ${t.padX};">${html}</p>`
@@ -37,7 +37,7 @@ function base(t: GzhTokens, layout: GzhThemeId): GzhComponents {
       : `<span style="background:${t.faint};color:${t.muted};padding:2px 6px;border-radius:4px;text-decoration:line-through;font-weight:600;">${html}</span>`
 
   const codespan = (html: string) =>
-    `<span style="background:${t.primaryBg};color:${t.primary};padding:1px 6px;border-radius:4px;font-family:'SF Mono',Consolas,Monaco,monospace;font-size:14px;">${html}</span>`
+    `<span style="background:${t.primaryBg};color:${t.primary};padding:1px 6px;border-radius:4px;font-family:${t.titleFont};font-size:14px;">${html}</span>`
 
   const link = (_href: string, html: string, _title?: string) =>
     `<span style="color:${t.primary};border-bottom:1px solid ${t.primaryLight};">${html}</span>`
@@ -118,11 +118,12 @@ function zen(t: GzhTokens): GzhComponents {
     toc(items) {
       const cells = items
         .map((item, i) => {
-          const last = i === items.length - 1
-          const border = last
-            ? ``
-            : `border-right:1px solid ${t.line};margin-right:16px;`
-          return `<section style="flex:1;padding:18px 12px 18px 0;border-bottom:1px solid ${t.line};${border}">
+          const column = i % 3
+          const lastColumn = column === 2 || i === items.length - 1
+          const border = lastColumn ? `` : `border-right:1px solid ${t.line};`
+          const paddingLeft = column === 0 ? 0 : 16
+          const paddingRight = lastColumn ? 0 : 16
+          return `<section style="min-width:0;padding:18px ${paddingRight}px 18px ${paddingLeft}px;border-bottom:1px solid ${t.line};${border}">
           <p style="font-size:11px;color:${t.primary};font-weight:600;margin:0 0 6px;letter-spacing:1px;">${item.isLast ? `∞` : pad2(item.index)}</p>
           <p style="font-size:13px;color:${t.title};margin:0;font-weight:500;line-height:1.5;">${item.title}</p>
         </section>`
@@ -130,7 +131,7 @@ function zen(t: GzhTokens): GzhComponents {
         .join(``)
       return `<section style="padding:0 ${t.padX} 48px;">
         <p style="font-size:11px;color:${t.muted};margin:0 0 20px;letter-spacing:2px;text-transform:uppercase;">本文脉络</p>
-        <section style="border-top:1px solid ${t.line};"><section style="display:flex;">${cells}</section></section>
+        <section style="border-top:1px solid ${t.line};"><section style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));">${cells}</section></section>
       </section>`
     },
     chapter({ index, title, english, isLast, isFirst }) {

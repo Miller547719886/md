@@ -424,9 +424,10 @@ export function initRenderer(opts: IOpts): RendererAPI {
 
     paragraph({ tokens }: Tokens.Paragraph): string {
       const text = this.parser.parseInline(tokens)
-      const isFigureImage = text.includes(`<figure`) && text.includes(`<img`)
+      const isBlockImage = text.includes(`<img`)
+        && (text.includes(`<figure`) || text.includes(`<section`))
       const isEmpty = text.trim() === ``
-      if (isFigureImage || isEmpty) {
+      if (isBlockImage || isEmpty) {
         return text
       }
       const gzh = getGzhComponents()

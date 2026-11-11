@@ -28,7 +28,7 @@ export const gzhTokens: Record<GzhThemeId, GzhTokens> = {
     letterSpacing: `0.3px`,
     maxWidth: `677px`,
     padX: `16px`,
-    fontFamily: sans,
+    fontFamily: serif,
     titleFont: serif,
     underlineCss: `border-bottom:1.5px solid #B5C8BC;font-weight:500;`,
   },

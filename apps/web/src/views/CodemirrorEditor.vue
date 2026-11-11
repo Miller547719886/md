@@ -255,6 +255,13 @@ function openSearchWithSelection(cm: Editor) {
 }
 
 function handleGlobalKeydown(e: KeyboardEvent) {
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && e.key.toLowerCase() === `s`) {
+    e.preventDefault()
+    if (!e.repeat)
+      void store.formatContent()
+    return
+  }
+
   if (e.key === `Escape` && searchTabRef.value?.showSearchTab) {
     searchTabRef.value.showSearchTab = false
     e.preventDefault()
@@ -301,14 +308,28 @@ function uploaded(imageUrl: string, options?: UploadExtra) {
   setTimeout(() => {
     toggleShowUploadImgDialog(false)
   }, 1000)
-  // 上传成功，获取光标
-  const cursor = editor.value!.getCursor()
   const title = options?.title?.trim()
   const markdownImage = title
     ? `![](${imageUrl} "${title}")`
     : `![](${imageUrl})`
-  // 将 Markdown 形式的 URL 插入编辑框光标所在位置
-  toRaw(store.editor!).replaceSelection(`\n${markdownImage}\n`, cursor as any)
+  // 将图片作为独立段落插入，并合并光标两侧已有的换行
+  const cm = toRaw(store.editor!)
+  const content = cm.getValue()
+  // shortcut: 仅处理主选区，多光标插图需逐个合并重叠的换行范围时再扩展。
+  const from = cm.indexFromPos(cm.getCursor(`from`))
+  const to = cm.indexFromPos(cm.getCursor(`to`))
+  const before = content.slice(0, from).replace(/(?:\n[ \t]*)+$/, ``)
+  const after = content.slice(to).replace(/^(?:[ \t]*\n)+/, ``)
+  const beforeSpacing = before ? `\n\n` : ``
+  const afterSpacing = after ? `\n\n` : ``
+  cm.replaceRange(
+    `${beforeSpacing}${markdownImage}${afterSpacing}`,
+    cm.posFromIndex(before.length),
+    cm.posFromIndex(content.length - after.length),
+  )
+  cm.setCursor(cm.posFromIndex(
+    before.length + beforeSpacing.length + markdownImage.length + afterSpacing.length,
+  ))
   toast.success(`图片上传成功`)
 }
 
@@ -740,15 +761,6 @@ onUnmounted(() => {
                   <div class="space-y-2">
                     <div class="flex items-center justify-between text-xs text-muted-foreground">
                       <span>参考文献</span>
-                      <button
-                        class="flex items-center space-x-1 px-2 py-1 text-xs text-primary border border-primary/30 rounded hover:bg-primary/10 transition-colors"
-                        @click="addReference"
-                      >
-                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                        </svg>
-                        <span>添加</span>
-                      </button>
                     </div>
 
                     <div
@@ -776,6 +788,15 @@ onUnmounted(() => {
                         </svg>
                       </button>
                     </div>
+                    <button
+                      class="flex w-fit items-center space-x-1 px-2 py-1 text-xs text-primary border border-primary/30 rounded hover:bg-primary/10 transition-colors"
+                      @click="addReference"
+                    >
+                      <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      <span>添加</span>
+                    </button>
                   </div>
                 </div>
               </div>

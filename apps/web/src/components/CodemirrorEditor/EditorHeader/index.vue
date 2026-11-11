@@ -2,16 +2,13 @@
 import { getDefaultMpProfile } from '@md/shared/configs'
 import { isGzhTheme } from '@md/shared/gzh'
 import { driver } from 'driver.js'
-import { ChevronDownIcon, Menu, Settings } from 'lucide-vue-next'
+import { Menu, Settings } from 'lucide-vue-next'
 import {
   computed,
-  h,
-  markRaw,
   nextTick,
   onMounted,
   onUnmounted,
   ref,
-  watch,
 } from 'vue'
 import img01 from '@/assets/images/01.png'
 import img02 from '@/assets/images/02.png'
@@ -21,7 +18,6 @@ import img05 from '@/assets/images/05.png'
 import { useStore } from '@/stores'
 import { addPrefix, processClipboardContent } from '@/utils'
 import { copyHtml } from '@/utils/clipboard'
-import CopyGuideToast from './CopyGuideToast.vue'
 import FormatDropdown from './FormatDropdown.vue'
 import 'driver.js/dist/driver.css'
 
@@ -32,7 +28,6 @@ const store = useStore()
 const {
   output,
   primaryColor,
-  editor,
   glossaryEntries,
   authorName,
   reviewerName,
@@ -48,6 +43,7 @@ const aboutDialogVisible = ref(false)
 const fundDialogVisible = ref(false)
 const editorStateDialogVisible = ref(false)
 const copyGuideDialogVisible = ref(false)
+const copySuccessDialogVisible = ref(false)
 const copyGuideActiveIndex = ref(0)
 const COPY_GUIDE_TOTAL = 5
 const guideImages = [img01, img02, img03, img04, img05]
@@ -115,6 +111,20 @@ function openCopyGuideDialog() {
   copyGuideDialogVisible.value = true
 }
 
+function handleGoPaste() {
+  window.open(
+    `https://mp.weixin.qq.com/cgi-bin/appmsg`,
+    `_blank`,
+    `noreferrer`,
+  )
+  copySuccessDialogVisible.value = false
+}
+
+function handleOpenGuideFromCopySuccess() {
+  copySuccessDialogVisible.value = false
+  openCopyGuideDialog()
+}
+
 function goNextGuide() {
   // 最后一张时，点击“完成”关闭弹窗并复位索引
   if (copyGuideActiveIndex.value === COPY_GUIDE_TOTAL - 1) {
@@ -160,21 +170,6 @@ onUnmounted(() => {
   window.removeEventListener(`keydown`, handleGuideKeydown)
 })
 
-const copyMode = useStorage(addPrefix(`copyMode`), `txt`)
-
-watch(
-  theme,
-  (id) => {
-    if (isGzhTheme(id))
-      copyMode.value = `txt`
-  },
-  { immediate: true },
-)
-
-const { copy: copyContent } = useClipboard({
-  legacy: true,
-})
-
 // 生成公众号名片HTML
 function buildMpCardHtml() {
   const profile = getDefaultMpProfile()
@@ -200,30 +195,8 @@ function buildMpCardHtml() {
 // 复制到微信公众号
 async function copy() {
   // 先执行格式化前置操作
-  await store.formatContent()
+  const hasAutoToc = await store.formatContent()
 
-  // 如果是 Markdown 源码，直接复制并返回
-  if (copyMode.value === `md`) {
-    const mdContent = editor.value?.getValue() || ``
-    await copyContent(mdContent)
-    toast.custom(() =>
-      h(markRaw(CopyGuideToast), {
-        onGoPaste: () => {
-          window.open(
-            `https://mp.weixin.qq.com/cgi-bin/appmsg`,
-            `_blank`,
-            `noreferrer`,
-          )
-        },
-        onOpenGuide: () => {
-          openCopyGuideDialog()
-        },
-      }),
-    )
-    return
-  }
-
-  // 以下处理非 Markdown 的复制流程
   emit(`startCopy`)
 
   setTimeout(() => {
@@ -232,6 +205,23 @@ async function copy() {
         skipHljs: isGzhTheme(theme.value),
       })
       const clipboardDiv = document.getElementById(`output`)!
+      const hasCopiedAutoToc = () =>
+        Boolean(clipboardDiv.querySelector(`[data-auto-toc="true"]`))
+
+      // 检查自动目录是否留在待复制内容中，缺失时用刚刷新的预览重新准备一次。
+      if (hasAutoToc && !hasCopiedAutoToc()) {
+        clipboardDiv.innerHTML = output.value
+        await processClipboardContent(primaryColor.value, {
+          skipHljs: isGzhTheme(theme.value),
+        })
+      }
+
+      if (hasAutoToc && !hasCopiedAutoToc()) {
+        clipboardDiv.innerHTML = output.value
+        toast.error(`复制前未检测到自动目录，已取消本次复制，请重试。`)
+        emit(`endCopy`)
+        return
+      }
 
       // 自动添加生涯重塑公众号名片到文章尾部
       const mpCardHtml = buildMpCardHtml()
@@ -243,42 +233,19 @@ async function copy() {
 
       const temp = clipboardDiv.innerHTML
 
-      if (copyMode.value === `txt`) {
-        // 使用统一的 HTML 复制工具，内部已做 Clipboard API 能力检测和降级处理
-        try {
-          const plainText = clipboardDiv.textContent || ``
-          await copyHtml(temp, plainText)
-        }
-        catch (error) {
-          toast.error(`复制失败，请联系开发者。${error}`)
-          return
-        }
+      // 使用统一的 HTML 复制工具，内部已做 Clipboard API 能力检测和降级处理
+      try {
+        const plainText = clipboardDiv.textContent || ``
+        await copyHtml(temp, plainText)
+      }
+      catch (error) {
+        toast.error(`复制失败，请联系开发者。${error}`)
+        return
       }
 
       clipboardDiv.innerHTML = output.value
 
-      if (copyMode.value === `html`) {
-        await copyContent(temp)
-      }
-      else if (copyMode.value === `html-and-style`) {
-        await copyContent(store.editorContent2HTML())
-      }
-
-      // 输出提示：已复制渲染内容，并提供“去粘贴”和“后续如何操作？”入口
-      toast.custom(() =>
-        h(markRaw(CopyGuideToast), {
-          onGoPaste: () => {
-            window.open(
-              `https://mp.weixin.qq.com/cgi-bin/appmsg`,
-              `_blank`,
-              `noreferrer`,
-            )
-          },
-          onOpenGuide: () => {
-            openCopyGuideDialog()
-          },
-        }),
-      )
+      copySuccessDialogVisible.value = true
       window.dispatchEvent(
         new CustomEvent(`copyToMp`, {
           detail: {
@@ -470,10 +437,14 @@ function tryAutoGuide() {
         使用向导
       </Button>
 
-      <!-- 复制按钮组 -->
+      <Button variant="outline" class="text-sm" @click="store.formatContent()">
+        格式化
+      </Button>
+
+      <!-- 公众号复制按钮 -->
       <div
         id="copy-actions"
-        class="bg-background space-x-1 text-background-foreground flex items-center border rounded-md"
+        class="bg-background text-background-foreground flex items-center border rounded-md"
       >
         <Button
           variant="ghost"
@@ -482,30 +453,6 @@ function tryAutoGuide() {
         >
           复制
         </Button>
-        <Separator orientation="vertical" class="h-5" />
-        <DropdownMenu v-model="copyMode">
-          <DropdownMenuTrigger as-child>
-            <Button variant="ghost" class="px-2 shadow-none">
-              <ChevronDownIcon class="text-secondary-foreground h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" :align-offset="-5" class="w-[200px]">
-            <DropdownMenuRadioGroup v-model="copyMode">
-              <DropdownMenuRadioItem value="txt">
-                公众号格式
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="html">
-                HTML 格式
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="html-and-style">
-                HTML 格式（兼容样式）
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="md">
-                MD 格式
-              </DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
       </div>
 
       <!-- 文章信息（移动端隐藏） -->
@@ -553,6 +500,42 @@ function tryAutoGuide() {
       </AlertDialogFooter>
     </AlertDialogContent>
   </AlertDialog>
+
+  <Dialog v-model:open="copySuccessDialogVisible">
+    <DialogContent
+      class="!fixed !inset-0 !left-0 !top-0 !h-dvh !w-screen !max-w-none !translate-x-0 !translate-y-0 !gap-0 !rounded-none !border-0 !bg-transparent !p-6 !shadow-none grid place-items-center"
+    >
+      <div
+        class="w-full max-w-2xl space-y-6 rounded-xl border bg-background p-8 text-center shadow-2xl sm:p-12"
+      >
+        <div
+          aria-hidden="true"
+          class="mx-auto flex size-16 items-center justify-center rounded-full bg-primary/10 text-3xl text-primary"
+        >
+          ✓
+        </div>
+        <div class="space-y-2">
+          <DialogTitle class="text-2xl font-bold sm:text-3xl">
+            复制成功
+          </DialogTitle>
+          <DialogDescription class="text-base leading-7">
+            已复制渲染后的文章和公众号名片，可直接粘贴到公众号后台。
+          </DialogDescription>
+        </div>
+        <div class="flex flex-wrap justify-center gap-3">
+          <Button @click="handleGoPaste">
+            去公众号后台粘贴
+          </Button>
+          <Button
+            variant="outline"
+            @click="handleOpenGuideFromCopySuccess"
+          >
+            查看后续操作指南
+          </Button>
+        </div>
+      </div>
+    </DialogContent>
+  </Dialog>
 
   <!-- 复制后操作引导全屏轮播 -->
   <div

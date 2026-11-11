@@ -7,12 +7,12 @@ export function sharedCodeBlock(
   lang: string,
 ): string {
   const langLabel = lang
-    ? `<span style="margin-left:12px;font-size:12px;color:#64748B;font-family:Consolas,Monaco,monospace;letter-spacing:1px;">${lang}</span>`
+    ? `<span style="margin-left:12px;font-size:12px;color:#64748B;font-family:${t.titleFont};letter-spacing:1px;">${lang}</span>`
     : ``
   const body = lines
     .map(
       line =>
-        `<p style="margin:0;font-family:'SF Mono',Consolas,Monaco,monospace;font-size:13px;line-height:1.6;color:#E2E8F0;">${line || `&nbsp;`}</p>`,
+        `<p style="margin:0;font-family:${t.titleFont};font-size:13px;line-height:1.6;color:#E2E8F0;">${line || `&nbsp;`}</p>`,
     )
     .join(``)
 
@@ -53,17 +53,15 @@ export function sharedTable(
   rows: string[][],
 ): string {
   const th = header
-    .map(
-      cell =>
-        `<th style="padding:10px 12px;text-align:left;font-size:13px;color:${t.title};border-bottom:1px solid ${t.line};background:${t.primaryBg};">${cell}</th>`,
+    .map((cell, index) =>
+      `<th style="padding:10px 12px;text-align:left;font-size:13px;color:${t.title};border-bottom:1px solid ${t.line};background:${t.primaryBg};${index === 0 ? `word-break:keep-all;` : ``}">${cell}</th>`,
     )
     .join(``)
   const body = rows
     .map((row, i) => {
       const tds = row
-        .map(
-          cell =>
-            `<td style="padding:10px 12px;font-size:13px;color:${t.body};border-bottom:1px solid ${t.line};">${cell}</td>`,
+        .map((cell, index) =>
+          `<td style="padding:10px 12px;font-size:13px;color:${t.body};border-bottom:1px solid ${t.line};${index === 0 ? `word-break:keep-all;` : ``}">${cell}</td>`,
         )
         .join(``)
       const bg = i % 2 === 1 ? `background:${t.paper};` : ``
