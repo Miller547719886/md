@@ -19,42 +19,57 @@ export function toggleFormat(
   }: ToggleFormatOptions,
 ): void {
   const selected = editor.getSelection()
-  const from = editor.getCursor(`from`)
-  const to = editor.getCursor(`to`)
+  const anchor = editor.getCursor(`anchor`)
+  const head = editor.getCursor(`head`)
+  const anchorIndex = editor.indexFromPos(anchor)
+  const headIndex = editor.indexFromPos(head)
+  const selectionStart = Math.min(anchorIndex, headIndex)
+  const hasSelection = anchorIndex !== headIndex
   const isFormatted = check?.(selected) ?? false
-
-  let newText: string
-  let newFrom = { ...from }
-  let newTo = { ...to }
 
   if (isFormatted) {
     // Remove formatting (e.g. **abc** -> abc)
-    newText = selected.slice(prefix.length, selected.length - suffix.length)
+    const newText = selected.slice(prefix.length, selected.length - suffix.length)
     editor.replaceSelection(newText)
 
-    // Adjust selection to original
-    newTo.ch = newFrom.ch + newText.length
-    editor.setSelection(newFrom, newTo)
+    // Keep the selection on the unformatted text. Using document indexes here
+    // also keeps the end position correct when the selection spans lines.
+    const newStart = editor.posFromIndex(selectionStart)
+    const newEnd = editor.posFromIndex(selectionStart + newText.length)
+    const selection = anchorIndex <= headIndex
+      ? [newStart, newEnd]
+      : [newEnd, newStart]
+    editor.setSelection(selection[0], selection[1])
   }
   else {
     // Apply formatting
-    newText = `${prefix}${selected}${suffix}`
+    const newText = `${prefix}${selected}${suffix}`
     editor.replaceSelection(newText)
 
-    // Select the whole formatted string (**abc**)
-    newFrom = { ...from }
-    newTo = {
-      line: to.line,
-      ch: to.ch + prefix.length + suffix.length,
-    }
-    editor.setSelection(newFrom, newTo)
-
-    // Optional cursor shift (e.g. for `]()` links)
+    // Keep a non-empty selection around the newly formatted text. For a
+    // collapsed selection, put the caret between the markers instead of
+    // selecting the markers themselves (e.g. `****|` becomes `**|**`).
+    const formattedEnd = selectionStart + newText.length
     if (afterInsertCursorOffset !== 0) {
-      const { line, ch } = editor.getCursor()
-      editor.setCursor({ line, ch: ch + afterInsertCursorOffset })
+      // Links place the caret inside the URL (`[text](|)`).
+      editor.setCursor(editor.posFromIndex(formattedEnd + afterInsertCursorOffset))
+    }
+    else if (hasSelection) {
+      const newStart = editor.posFromIndex(selectionStart)
+      const newEnd = editor.posFromIndex(formattedEnd)
+      const selection = anchorIndex <= headIndex
+        ? [newStart, newEnd]
+        : [newEnd, newStart]
+      editor.setSelection(selection[0], selection[1])
+    }
+    else {
+      editor.setCursor(editor.posFromIndex(selectionStart + prefix.length))
     }
   }
+
+  // Formatting can also be invoked from the menubar. Restore focus so the
+  // next keystroke continues at the selection/caret we just computed.
+  editor.focus()
 }
 
 function applyHeading(editor: CodeMirror.Editor, level: number) {
@@ -78,6 +93,7 @@ function applyHeading(editor: CodeMirror.Editor, level: number) {
       }
     })
   })
+  editor.focus()
 }
 
 export function createExtraKeys(openSearchWithSelection: (cm: CodeMirror.Editor) => void): CodeMirror.KeyMap {
@@ -153,6 +169,7 @@ export function createExtraKeys(openSearchWithSelection: (cm: CodeMirror.Editor)
         ? lines.map(line => line.replace(/^- +/, ``)).join(`\n`)
         : lines.map(line => `- ${line}`).join(`\n`)
       editor.replaceSelection(updated)
+      editor.focus()
     },
 
     [`${ctrlKey}-O`]: function orderedList(editor) {
@@ -163,6 +180,7 @@ export function createExtraKeys(openSearchWithSelection: (cm: CodeMirror.Editor)
         ? lines.map(line => line.replace(/^\d+\.\s+/, ``)).join(`\n`)
         : lines.map((line, i) => `${i + 1}. ${line}`).join(`\n`)
       editor.replaceSelection(updated)
+      editor.focus()
     },
     [`${ctrlKey}-F`]: (cm: CodeMirror.Editor) => {
       openSearchWithSelection(cm)
