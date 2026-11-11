@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card'
 import { useStore } from '@/stores'
 
 const store = useStore()
@@ -77,17 +78,35 @@ onBeforeUnmount(() => {
       使用快捷键，写作效率更高 ^w^
     </div>
 
-    <div
-      ref="marqueeWrapRef"
-      class="tips-marquee flex-1 text-center text-muted-foreground overflow-hidden whitespace-nowrap"
-    >
-      <span ref="marqueeTrackRef" class="tips-track">
-        <template v-for="(tip, index) in tips" :key="`${tip}-${index}`">
-          <span class="tip-item">{{ tip }}</span>
-          <span v-if="index !== tips.length - 1" class="tip-separator">｜</span>
-        </template>
-      </span>
-    </div>
+    <HoverCard :open-delay="0" :close-delay="0">
+      <HoverCardTrigger as-child>
+        <div
+          ref="marqueeWrapRef"
+          class="tips-marquee flex-1 text-center text-muted-foreground overflow-hidden whitespace-nowrap"
+          aria-label="快捷键提示"
+        >
+          <span ref="marqueeTrackRef" class="tips-track">
+            <template v-for="(tip, index) in tips" :key="`${tip}-${index}`">
+              <span class="tip-item">{{ tip }}</span>
+              <span v-if="index !== tips.length - 1" class="tip-separator">｜</span>
+            </template>
+          </span>
+        </div>
+      </HoverCardTrigger>
+
+      <HoverCardContent
+        side="top"
+        align="center"
+        :side-offset="8"
+        class="w-[min(90vw,32rem)] max-w-[calc(100vw-2rem)] p-3"
+      >
+        <ul class="flex flex-col gap-1 text-sm leading-6" aria-label="全部快捷键">
+          <li v-for="tip in tips" :key="tip" class="break-words">
+            {{ tip }}
+          </li>
+        </ul>
+      </HoverCardContent>
+    </HoverCard>
     <div class="flex-1 text-right space-x-2">
       <span> {{ readingTime.words }} 个词 </span>
       <span> {{ readingTime.chars }} 个字符 </span>
