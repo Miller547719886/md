@@ -38,11 +38,11 @@ function onUpdate(val: boolean) {
 
 <template>
   <Dialog :open="displayStore.isShowInsertFormDialog" @update:open="onUpdate">
-    <DialogContent>
-      <DialogHeader>
+    <DialogContent class="flex max-h-[calc(100dvh-2rem)] flex-col">
+      <DialogHeader class="shrink-0">
         <DialogTitle>插入表格</DialogTitle>
       </DialogHeader>
-      <div class="space-x-2 flex justify-between">
+      <div class="flex shrink-0 justify-between space-x-2">
         <NumberField v-model="rowNum" :min="1" :max="100">
           <Label>行数</Label>
           <NumberFieldContent>
@@ -60,7 +60,7 @@ function onUpdate(val: boolean) {
           </NumberFieldContent>
         </NumberField>
       </div>
-      <div class="space-y-2 border rounded p-2">
+      <div class="min-h-0 flex-1 overflow-y-auto space-y-2 border rounded p-2">
         <div v-for="row in rowNum + 1" :key="row" :class="{ 'head-style': row === 1 }" class="space-x-2 flex">
           <Input
             v-for="col in colNum" :key="col"
@@ -72,7 +72,7 @@ function onUpdate(val: boolean) {
           />
         </div>
       </div>
-      <DialogFooter>
+      <DialogFooter class="shrink-0">
         <Button variant="outline" @click="toggleShowInsertFormDialog(false)">
           取 消
         </Button>
