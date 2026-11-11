@@ -19,7 +19,7 @@ export interface MpProfile {
 export const presetMpProfiles: MpProfile[] = [
   {
     id: `MzkxNTY5NDczNQ==`,
-    name: `生涯重塑`,
+    name: `工作压力与生涯重塑`,
     logo: `http://mmbiz.qpic.cn/sz_mmbiz_png/VCeVZBUIkj4gDWbP82CPzL10k4ImxylltWXTUGqBibiarpIoJicJFicNKLgylgfoU81XDs01hkMO0wia4k5XVs2mUicQ/0?wx_fmt=png`,
     desc: `发布华中师范大学心理学院王忠军教授课题组最新动态，分享和传播国内外工作与生涯重塑、生涯心理咨询与辅导、自我与组织职业生涯管理、工作压力管理与职业心理健康、管理心理学与人力资源管理领域的研究进展、科学知识和实践方法。`,
   },
@@ -35,5 +35,5 @@ export const presetMpProfiles: MpProfile[] = [
  * 获取默认的公众号配置
  */
 export function getDefaultMpProfile(): MpProfile {
-  return presetMpProfiles[0] // 默认返回生涯重塑公众号
+  return presetMpProfiles[0] // 默认返回工作压力与生涯重塑公众号
 }

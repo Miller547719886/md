@@ -223,7 +223,7 @@ async function copy() {
         return
       }
 
-      // 自动添加生涯重塑公众号名片到文章尾部
+      // 自动添加工作压力与生涯重塑公众号名片到文章尾部
       const mpCardHtml = buildMpCardHtml()
       clipboardDiv.innerHTML += `<hr style="margin: 24px 0; border-color: rgba(0,0,0,0.1)" />\n`
       clipboardDiv.innerHTML += mpCardHtml
